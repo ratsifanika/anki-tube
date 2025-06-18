@@ -1,0 +1,38 @@
+# Virtual environment
+.venv/
+env/
+venv/
+
+# Python compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Editor/IDE specific files
+.vscode/
+.idea/
+*.swp
+*.bak
+
+# Database files (if using SQLite)
+*.db
+*.sqlite
+*.sqlite3
+
+# Log files
+*.log
+
+# Environment variables and secrets
+.env
+.flaskenv
+secrets.yml
+config.ini
+
+# Uploaded files or user-generated content (if applicable)
+uploads/
+media/
+
+# Operating system specific files
+.DS_Store
+Thumbs.db

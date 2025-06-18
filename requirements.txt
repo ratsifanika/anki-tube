@@ -1,0 +1,9 @@
+fastapi
+uvicorn # Recommandé si vous utilisez FastAPI
+pydantic
+openai
+python-dotenv # Si vous utilisez os.environ avec un fichier .env
+yt-dlp
+# whisper
+youtube-transcript-api
+dotenv
