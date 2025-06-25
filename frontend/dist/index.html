@@ -3,10 +3,47 @@
   <head>
     <meta charset="UTF-8" />
     <title>Lit App</title>
-    <link rel="stylesheet" href="./bundle.css" />
+
   </head>
   <body>
-    <my-element></my-element>
-    <script type="module" src="./bundle.js"></script>
+    <my-app></my-app>
+
   </body>
+</html>
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ma Page Gemini-like</title>
+    <link rel="stylesheet" href="./bundle.css" />
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h3>Nouvelle discussion</h3>
+                <button class="toggle-sidebar">X</button>
+            </div>
+            <nav class="discussions-list">
+                <ul>
+                    <li><a href="#">Ancienne discussion 1</a></li>
+                    <li><a href="#">Ancienne discussion 2</a></li>
+                    <li><a href="#">Ancienne discussion 3</a></li>
+                    </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <div class="container">
+                <div class="search-box">
+                    <input type="text" placeholder="Rechercher ou saisir une URL">
+                    <button>🔍</button>
+                </div>
+            </div>
+        </main>
+    </div>
+   <script type="module" src="./bundle.js"></script>
+</body>
 </html>

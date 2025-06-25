@@ -1,7 +1,9 @@
 import { LitElement, html, css } from 'lit';
+import {customElement} from 'lit/decorators';
 import './components/Part';
 
-export class MyElement extends LitElement {
+@customElement('my-app')
+export class MyApp extends LitElement {
   static styles = css`p { color: red }
               other-part {color: blue}`;
   render() {
@@ -11,5 +13,3 @@ export class MyElement extends LitElement {
     </p>`;
   }
 }
-
-customElements.define('my-element', MyElement);
