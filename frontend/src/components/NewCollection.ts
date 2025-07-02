@@ -1,8 +1,12 @@
 import { LitElement, html, css } from "lit";
-import { customElement } from "lit/decorators.js";
+import { customElement, state } from "lit/decorators.js";
+import { CurrentCollection } from "./CurrentCollection";
 
 @customElement('new-collection')
 export class NewCollection extends LitElement {
+
+  @state()error: string|null = null;
+  @state()loading: boolean = false;
 
   static styles = [
     css`
@@ -64,20 +68,26 @@ export class NewCollection extends LitElement {
         return;
     }
     try {
+        this.loading = true;
         const response = await this._callBackend(url);
         if (response.status === 200) {
-            // Assuming the backend returns a collection ID
+            // The backend returns a collection ID
             const collectionId = response.collectionId;
-            alert(`Collection créée avec succès ! ID: ${collectionId}`);
-            // Optionally, you can redirect or update the UI to show the new collection
+            const currentCollection = document.createElement('current-collection') as CurrentCollection;
+            currentCollection.setAttribute('collection-id', collectionId);
+            this.parentElement?.classList.remove('main-content');
+            this.parentElement?.classList.add('current-collection');
+            this.parentElement?.appendChild(currentCollection);
+            this.remove(); // Remove the new collection component after creation
+
         } else {
-            alert("Échec de la création de la collection. Veuillez réessayer.");
+            this.error = "(${response.status})Erreur lors de la création de la collection. Veuillez réessayer.";
         }
 
     } catch (error) {
-      console.error("Erreur lors de la création de la collection:", error);
-      alert("Une erreur s'est produite lors de la création de la collection.");
-      return;
+      this.error = "Erreur inattendue: ${error}";
+    } finally{
+        this.loading = false;
     }
   }
 
@@ -92,7 +102,7 @@ export class NewCollection extends LitElement {
             return;
         }
             resolve({ status: 200, collectionId: "mock-collection-id" });
-        }, 1000);
+        }, 500);
       });
     }
 
@@ -101,9 +111,11 @@ export class NewCollection extends LitElement {
       <div class="container">
         <h1>Crée une nouvelle collection</h1>
          <div class="search-box">
-            <input type="text" placeholder="Saisir une URL">
-            <button @click=${this._handleClick}>🪄</button>
+            <input type="text" placeholder="Saisir une URL" ?disabled=${this.loading}>
+            <button @click=${this._handleClick} ?disabled=${this.loading}>🪄</button>
          </div>
+          ${this.loading ? html`<p>Chargement...</p>` : ''}
+          ${this.error ? html`<p style="color: red;">${this.error}</p>` : ''}
       </div>
     `;
   }
