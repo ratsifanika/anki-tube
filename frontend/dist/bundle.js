@@ -81,6 +81,10 @@ let AppContainer = class AppContainer extends i {
             mainContent.classList.toggle('expanded');
         }
     }
+    _onCollectionSelected(e) {
+        const id = e.detail.collectionId;
+        console.log('Received in parent:', id);
+    }
     render() {
         return x `
         <div class="app-container">
@@ -90,7 +94,7 @@ let AppContainer = class AppContainer extends i {
                     <button class="toggle-sidebar" @click="${this.toggleSidebar}">X</button>
                 </div>
                 <nav class="collection-list">
-                    <collection-list></collection-list>
+                    <collection-list @collection-selected=${this._onCollectionSelected}></collection-list>
                 </nav>
             </aside>
 
@@ -350,12 +354,19 @@ CurrentCollection = __decorate([
 ], CurrentCollection);
 
 let CollectionList = class CollectionList extends i {
+    _selectCollection(collectionId) {
+        this.dispatchEvent(new CustomEvent("collection-selected", {
+            detail: { collectionId },
+            bubbles: true,
+            composed: true,
+        }));
+    }
     render() {
         return x `
             <ul>
-                <li part="list-item"><a href="#">Collection 1</a></li>
-                <li part="list-item"><a href="#">Collection 2</a></li>
-                <li part="list-item"><a href="#">Collection 3</a></li>
+                <li part="list-item" @click="${() => this._selectCollection("1")}"><a href="#">Collection 1</a></li>
+                <li part="list-item" @click="${() => this._selectCollection("2")}"><a href="#">Collection 2</a></li>
+                <li part="list-item" @click="${() => this._selectCollection("3")}"><a href="#">Collection 3</a></li>
             </ul>
         `;
     }

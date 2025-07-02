@@ -100,6 +100,11 @@ export class AppContainer extends LitElement {
         }
     }
 
+    _onCollectionSelected(e: CustomEvent) {
+        const id = e.detail.collectionId;
+        console.log('Received in parent:', id);
+    }
+
     render() {
         return html `
         <div class="app-container">
@@ -109,7 +114,7 @@ export class AppContainer extends LitElement {
                     <button class="toggle-sidebar" @click="${this.toggleSidebar}">X</button>
                 </div>
                 <nav class="collection-list">
-                    <collection-list></collection-list>
+                    <collection-list @collection-selected=${this._onCollectionSelected}></collection-list>
                 </nav>
             </aside>
 
