@@ -1,5 +1,7 @@
 import { html, LitElement, css } from "lit";
 import { customElement } from "lit/decorators.js";
+import { CurrentCollection } from "./CurrentCollection";
+import { NewCollection } from "./NewCollection";
 
 @customElement('app-container')
 export class AppContainer extends LitElement {
@@ -92,7 +94,7 @@ export class AppContainer extends LitElement {
 
     toggleSidebar() {
         const sidebar = this.shadowRoot?.querySelector('.sidebar');
-        const mainContent = this.shadowRoot?.querySelector('.main-content');
+        const mainContent = this.shadowRoot?.querySelector('#main-content');
 
         if (sidebar && mainContent) {
             sidebar.classList.toggle('collapsed');
@@ -101,8 +103,23 @@ export class AppContainer extends LitElement {
     }
 
     _onCollectionSelected(e: CustomEvent) {
-        const id = e.detail.collectionId;
-        console.log('Received in parent:', id);
+        const collectionId = e.detail.collectionId;
+        const mainContent = this.shadowRoot?.querySelector('#main-content') as HTMLElement;
+        mainContent.classList.remove('main-content');
+        mainContent.classList.add('current-collection');
+        const currentCollection = document.createElement('current-collection') as CurrentCollection;
+        currentCollection.collectionId = collectionId;
+        mainContent.innerHTML = '';
+        mainContent.appendChild(currentCollection);
+    }
+
+    _onNewCollection() {
+        const mainContent = this.shadowRoot?.querySelector('#main-content') as HTMLElement;
+        mainContent.classList.remove('current-collection');
+        mainContent.classList.add('main-content');
+        mainContent.innerHTML = '';
+        const newCollection = document.createElement('new-collection') as NewCollection;
+        mainContent.appendChild(newCollection);
     }
 
     render() {
@@ -110,7 +127,7 @@ export class AppContainer extends LitElement {
         <div class="app-container">
             <aside class="sidebar">
                 <div class="sidebar-header">
-                    <h3><a href="#">Nouvelle collection</a></h3>
+                    <h3><a href="#" @click="${this._onNewCollection}">Nouvelle collection</a></h3>
                     <button class="toggle-sidebar" @click="${this.toggleSidebar}">X</button>
                 </div>
                 <nav class="collection-list">

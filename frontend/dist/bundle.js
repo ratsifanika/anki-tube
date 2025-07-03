@@ -75,22 +75,36 @@ const t=t=>(e,o)=>{void 0!==o?o.addInitializer((()=>{customElements.define(t,e);
 let AppContainer = class AppContainer extends i {
     toggleSidebar() {
         const sidebar = this.shadowRoot?.querySelector('.sidebar');
-        const mainContent = this.shadowRoot?.querySelector('.main-content');
+        const mainContent = this.shadowRoot?.querySelector('#main-content');
         if (sidebar && mainContent) {
             sidebar.classList.toggle('collapsed');
             mainContent.classList.toggle('expanded');
         }
     }
     _onCollectionSelected(e) {
-        const id = e.detail.collectionId;
-        console.log('Received in parent:', id);
+        const collectionId = e.detail.collectionId;
+        const mainContent = this.shadowRoot?.querySelector('#main-content');
+        mainContent.classList.remove('main-content');
+        mainContent.classList.add('current-collection');
+        const currentCollection = document.createElement('current-collection');
+        currentCollection.collectionId = collectionId;
+        mainContent.innerHTML = '';
+        mainContent.appendChild(currentCollection);
+    }
+    _onNewCollection() {
+        const mainContent = this.shadowRoot?.querySelector('#main-content');
+        mainContent.classList.remove('current-collection');
+        mainContent.classList.add('main-content');
+        mainContent.innerHTML = '';
+        const newCollection = document.createElement('new-collection');
+        mainContent.appendChild(newCollection);
     }
     render() {
         return x `
         <div class="app-container">
             <aside class="sidebar">
                 <div class="sidebar-header">
-                    <h3><a href="#">Nouvelle collection</a></h3>
+                    <h3><a href="#" @click="${this._onNewCollection}">Nouvelle collection</a></h3>
                     <button class="toggle-sidebar" @click="${this.toggleSidebar}">X</button>
                 </div>
                 <nav class="collection-list">
@@ -214,7 +228,7 @@ let NewCollection = class NewCollection extends i {
                 // The backend returns a collection ID
                 const collectionId = response.collectionId;
                 const currentCollection = document.createElement('current-collection');
-                currentCollection.setAttribute('collection-id', collectionId);
+                currentCollection.collectionId = collectionId;
                 this.parentElement?.classList.remove('main-content');
                 this.parentElement?.classList.add('current-collection');
                 this.parentElement?.appendChild(currentCollection);
@@ -319,12 +333,115 @@ NewCollection = __decorate([
     t('new-collection')
 ], NewCollection);
 
+// src/config/api.js
+const API_BASE_URL = 'http://localhost:8030';
+
+class Card {
+    constructor(id, front, back, difficulty = 1, numberOfViews = 0, numberOfGoodAnswer = 0, tags = [], createdAt = new Date(), updatedAt = new Date()) {
+        this.id = id;
+        this.front = front;
+        this.back = back;
+        this.difficulty = difficulty;
+        this.numberOfViews = numberOfViews;
+        this.numberOfGoodAnswer = numberOfGoodAnswer;
+        this.tags = tags;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+    }
+    static fromJSON(json) {
+        return new Card(json.id, json.front, json.back, json.difficulty || 1, json.tags || [], json.numberOfViews || 0, json.numberOfGoodAnswer || 0, new Date(json.createdAt), new Date(json.updatedAt));
+    }
+    // Method to update the card's content
+    update(front, back, tags = []) {
+        this.front = front;
+        this.back = back;
+        this.tags = tags;
+        this.updatedAt = new Date();
+    }
+}
+
+class Collection {
+    constructor(id, name, cards = [], createdAt, updatedAt) {
+        this.id = id;
+        this.name = name;
+        this.cards = cards;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+    }
+    static fromJSON(json) {
+        return new Collection(json.id, json.name, json.cards ? json.cards.map((card) => Card.fromJSON(card)) : [], new Date(json.createdAt), new Date(json.updatedAt));
+    }
+    randomCard() {
+        if (this.cards.length === 0) {
+            return null;
+        }
+        const randomIndex = Math.floor(Math.random() * this.cards.length);
+        return this.cards[randomIndex];
+    }
+}
+
 let CurrentCollection = class CurrentCollection extends i {
+    constructor() {
+        super(...arguments);
+        this.collectionId = '';
+        this.collectionData = null;
+        this.isLoading = true;
+        this.currentCard = null;
+    }
+    willUpdate(_changedProperties) {
+        if (_changedProperties.has('collectionId') && this.collectionId) {
+            this.fetchCollectionData();
+        }
+    }
+    async fetchCollectionData() {
+        if (!this.collectionId) {
+            console.warn('Collection ID is not set.');
+            return;
+        }
+        this.isLoading = true;
+        try {
+            // const response = await fetch(`/api/collections/${this.collectionId}`);
+            const response = await fetch(`${API_BASE_URL}/api/collection/${this.collectionId}`);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const data = await response.json();
+            console.log('Data fetched:', data);
+            this.collectionData = Collection.fromJSON(data);
+            console.log('Collection data fetched:', this.collectionData);
+            this.currentCard = this.collectionData.randomCard();
+        }
+        catch (error) {
+            console.error('Error fetching collection data:', error);
+        }
+        finally {
+            this.isLoading = false;
+        }
+    }
     render() {
         return x `
       <div class="container">
-        <h1>Current Collection</h1>
-        <slot></slot>
+        <h1>${this.collectionData?.name}</h1>
+
+        <p>
+          ${this.isLoading ? 'Loading...' :
+            this.currentCard ?
+                `${this.currentCard.front}` :
+                'No cards available in this collection.'}
+        </p>
+
+        <div class="card-style">
+          <textarea placeholder="Type your answer here..."></textarea>
+          <button @click="${() => { }}">Respond</button>
+        </div>
+
+        <button @click="${() => {
+            if (this.collectionData) {
+                this.currentCard = this.collectionData.randomCard();
+            }
+        }}">
+          Next Card
+        </button>
       </div>
     `;
     }
@@ -336,7 +453,7 @@ CurrentCollection.styles = [
         flex-direction: column;
         align-items: center;
         width: 100%;
-        max-width: 600px;
+        max-width: 800px;
         padding: 20px;
         box-sizing: border-box;
       }
@@ -347,8 +464,55 @@ CurrentCollection.styles = [
         font-size: 24px;
         margin-bottom: 20px;
       }
+      .card-style {
+                background: #fff;
+                border-radius: 8px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                padding: 16px;
+                margin-bottom: 16px;
+                width: 100%;
+                max-width: 500px;
+                display: flex;
+                flex-direction: column;
+                align-items: stretch;
+              }
+              .card-style textarea {
+                resize: vertical;
+                min-height: 60px;
+                font-size: 16px;
+                padding: 8px;
+                border-radius: 4px;
+                border: 1px solid #ccc;
+                margin-bottom: 12px;
+              }
+              .card-style button {
+                align-self: flex-end;
+                padding: 8px 16px;
+                background: #1976d2;
+                color: #fff;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 15px;
+                transition: background 0.2s;
+              }
+              .card-style button:hover {
+                background: #1565c0;
+              }
     `
 ];
+__decorate([
+    n({ type: String })
+], CurrentCollection.prototype, "collectionId", void 0);
+__decorate([
+    r()
+], CurrentCollection.prototype, "collectionData", void 0);
+__decorate([
+    r()
+], CurrentCollection.prototype, "isLoading", void 0);
+__decorate([
+    r()
+], CurrentCollection.prototype, "currentCard", void 0);
 CurrentCollection = __decorate([
     t('current-collection')
 ], CurrentCollection);

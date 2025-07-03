@@ -28,4 +28,4 @@ EXPOSE 8000
 
 # Commande pour démarrer votre application
 # Assurez-vous que uvicorn est installé via requirements.txt
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

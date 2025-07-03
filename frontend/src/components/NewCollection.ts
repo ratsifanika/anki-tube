@@ -74,7 +74,7 @@ export class NewCollection extends LitElement {
             // The backend returns a collection ID
             const collectionId = response.collectionId;
             const currentCollection = document.createElement('current-collection') as CurrentCollection;
-            currentCollection.setAttribute('collection-id', collectionId);
+            currentCollection.collectionId = collectionId;
             this.parentElement?.classList.remove('main-content');
             this.parentElement?.classList.add('current-collection');
             this.parentElement?.appendChild(currentCollection);

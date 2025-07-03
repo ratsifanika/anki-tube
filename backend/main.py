@@ -41,6 +41,7 @@ if not openai.api_key:
 # Modèles Pydantic
 class CardGenerationRequest(BaseModel):
     video_id: str
+    video_title: str
     difficulty: str = "intermediaire"
     card_count: int = 15
     language: str = "fr"
@@ -476,15 +477,20 @@ async def generate_cards(request: CardGenerationRequest):
         # # 3. Nettoyer le fichier audio
         # transcription_service.cleanup_audio_file(audio_file)
 
-        transcript = transcription_service.get_transcript(request.video_id, languages=[request.language])
-        # 4. Générer les cartes avec OpenAI
-        cards = card_generation_service.generate_cards(
-            transcript=transcript,
-            difficulty=request.difficulty,
-            card_count=request.card_count,
-            language=request.language
-        )
+        # transcript = transcription_service.get_transcript(request.video_id, languages=[request.language])
+        # # 4. Générer les cartes avec OpenAI
+        # cards = card_generation_service.generate_cards(
+        #     transcript=transcript,
+        #     difficulty=request.difficulty,
+        #     card_count=request.card_count,
+        #     language=request.language
+        # )
 
+        cards = [
+            AnkiCard(front="Quelle est la capitale de la France ?", back="Paris", tags=["géographie", "France"]),
+            AnkiCard(front="Qui a écrit Les Misérables ?", back="Victor Hugo", tags=["littérature", "auteur"]),
+            AnkiCard(front="Quelle est la formule chimique de l'eau ?", back="H2O", tags=["chimie", "science"])
+        ]
         generation_time = time.time() - start_time
 
         return CardGenerationResponse(
@@ -521,6 +527,21 @@ async def health_check():
         "timestamp": datetime.now().isoformat(),
         "openai_configured": bool(openai.api_key)
     }
+
+@app.get("/api/collection/{collection_id}")
+async def get_collection(collection_id: str):
+    """Récupère les données d'une collection Anki"""
+    # Pour l'instant, on retourne des données statiques
+    # Vous pouvez remplacer cette logique par une récupération depuis une base de données ou un fichier
+    collection_data = {
+        "id": collection_id,
+        "name": "Ma Collection Anki",
+        "cards": [
+            {"id":"1","front": "Question 1", "back": "Réponse 1", "numberOfViews":3,"numberOfGoodAnswer": 3, "tags": ["tag1","tag4"], "createdAt": "2025-10-01T12:00:00Z", "updatedAt": "2025-10-02T12:00:00Z"},
+            {"id":"2","front": "Question 2", "back": "Réponse 2", "numberOfViews":4,"numberOfGoodAnswer": 2, "tags": ["tag2"],"createdAt": "2025-10-01T12:00:00Z", "updatedAt": "2025-10-02T12:00:00Z"}
+        ]
+    }
+    return collection_data
 
 if __name__ == "__main__":
     import uvicorn
