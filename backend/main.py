@@ -537,8 +537,8 @@ async def get_collection(collection_id: str):
         "id": collection_id,
         "name": "Ma Collection Anki",
         "cards": [
-            {"id":"1","front": "Question 1", "back": "Réponse 1", "numberOfViews":3,"numberOfGoodAnswer": 3, "tags": ["tag1","tag4"], "createdAt": "2025-10-01T12:00:00Z", "updatedAt": "2025-10-02T12:00:00Z"},
-            {"id":"2","front": "Question 2", "back": "Réponse 2", "numberOfViews":4,"numberOfGoodAnswer": 2, "tags": ["tag2"],"createdAt": "2025-10-01T12:00:00Z", "updatedAt": "2025-10-02T12:00:00Z"}
+            {"id":"1","front": "Question 1", "back": "Réponse 1", "numberOfViews":3,"numberOfGoodAnswers": 3, "tags": ["tag1","tag4"], "createdAt": "2025-10-01T12:00:00Z", "updatedAt": "2025-10-02T12:00:00Z"},
+            {"id":"2","front": "Question 2", "back": "Réponse 2", "numberOfViews":4,"numberOfGoodAnswers": 2, "tags": ["tag2"],"createdAt": "2025-10-01T12:00:00Z", "updatedAt": "2025-10-02T12:00:00Z"}
         ]
     }
     return collection_data

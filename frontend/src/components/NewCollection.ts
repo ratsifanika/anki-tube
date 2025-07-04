@@ -75,8 +75,8 @@ export class NewCollection extends LitElement {
             const collectionId = response.collectionId;
             const currentCollection = document.createElement('current-collection') as CurrentCollection;
             currentCollection.collectionId = collectionId;
-            this.parentElement?.classList.remove('main-content');
-            this.parentElement?.classList.add('current-collection');
+            // this.parentElement?.classList.remove('main-content');
+            // this.parentElement?.classList.add('current-collection');
             this.parentElement?.appendChild(currentCollection);
             this.remove(); // Remove the new collection component after creation
 

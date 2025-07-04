@@ -5,7 +5,7 @@ export class Card {
     public back: string,
     public difficulty: number = 1,
     public numberOfViews: number = 0,
-    public numberOfGoodAnswer: number = 0,
+    public numberOfGoodAnswers: number = 0,
     public tags: string[] = [],
     public createdAt: Date = new Date(),
     public updatedAt: Date = new Date()
@@ -19,7 +19,7 @@ export class Card {
       json.difficulty || 1,
       json.tags || [],
       json.numberOfViews || 0,
-      json.numberOfGoodAnswer || 0,
+      json.numberOfGoodAnswers || 0,
       new Date(json.createdAt),
       new Date(json.updatedAt)
     );

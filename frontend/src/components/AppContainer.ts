@@ -62,10 +62,10 @@ export class AppContainer extends LitElement {
             /* Contenu principal (où la barre de recherche est centrée) */
             .main-content {
                 flex-grow: 1; /* Prend l'espace restant */
-                display: flex; /* Active Flexbox pour centrer le contenu */
+                display: block; /* Active Flexbox pour centrer le contenu */
                 justify-content: center; /* Centre horizontalement le contenu */
                 align-items: center; /* Centre verticalement le contenu */
-                padding: 20px;
+                padding: 20px 40px;
                 box-sizing: border-box;
                 transition: margin-left 0.3s ease-in-out; /* Pour l'animation si la barre latérale pousse le contenu */
             }
@@ -75,8 +75,9 @@ export class AppContainer extends LitElement {
             }
 
             .current-collection {
-                display: flex; /* Active Flexbox pour centrer le contenu */
-                padding: 20px;
+                flex-grow: 1;
+                display: block; /* Active Flexbox pour centrer le contenu */
+                padding: 20px 40px;
                 box-sizing: border-box;
                 transition: margin-left 0.3s ease-in-out; /* Pour l'animation si la barre latérale pousse le contenu */
             }
@@ -88,6 +89,10 @@ export class AppContainer extends LitElement {
                 display: block;
                 text-align: center;
 
+            }
+            .content-wrapper {
+                max-width: 800px;  /* ou 1000px, selon design */
+                margin: 0 auto;    /* ✅ centre horizontalement */
             }
             `
     ];
@@ -105,8 +110,8 @@ export class AppContainer extends LitElement {
     _onCollectionSelected(e: CustomEvent) {
         const collectionId = e.detail.collectionId;
         const mainContent = this.shadowRoot?.querySelector('#main-content') as HTMLElement;
-        mainContent.classList.remove('main-content');
-        mainContent.classList.add('current-collection');
+        // mainContent.classList.remove('main-content');
+        // mainContent.classList.add('current-collection');
         const currentCollection = document.createElement('current-collection') as CurrentCollection;
         currentCollection.collectionId = collectionId;
         mainContent.innerHTML = '';
@@ -136,7 +141,9 @@ export class AppContainer extends LitElement {
             </aside>
 
             <main id="main-content" class="main-content">
-                <new-collection></new-collection>
+                <div class="content-wrapper">
+                    <new-collection></new-collection>
+                </div>
             </main>
         </div>
         `;
