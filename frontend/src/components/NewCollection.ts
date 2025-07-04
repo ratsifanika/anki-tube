@@ -11,12 +11,14 @@ export class NewCollection extends LitElement {
   static styles = [
     css`
       .container {
+        display:block;
         justify-content: center;
         align-items: center;
         width: 100%;
         max-width: 600px;
         padding: 20px;
         box-sizing: border-box;
+        margin: 0 auto; /* Center the container */
       }
 
       .search-box {

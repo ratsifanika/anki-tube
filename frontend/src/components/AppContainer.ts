@@ -91,7 +91,7 @@ export class AppContainer extends LitElement {
 
             }
             .content-wrapper {
-                max-width: 800px;  /* ou 1000px, selon design */
+                max-width: 1000px;  /* ou 1000px, selon design */
                 margin: 0 auto;    /* ✅ centre horizontalement */
             }
             `
@@ -120,8 +120,8 @@ export class AppContainer extends LitElement {
 
     _onNewCollection() {
         const mainContent = this.shadowRoot?.querySelector('#main-content') as HTMLElement;
-        mainContent.classList.remove('current-collection');
-        mainContent.classList.add('main-content');
+        // mainContent.classList.remove('current-collection');
+        // mainContent.classList.add('main-content');
         mainContent.innerHTML = '';
         const newCollection = document.createElement('new-collection') as NewCollection;
         mainContent.appendChild(newCollection);
@@ -140,8 +140,8 @@ export class AppContainer extends LitElement {
                 </nav>
             </aside>
 
-            <main id="main-content" class="main-content">
-                <div class="content-wrapper">
+            <main class="main-content">
+                <div id="main-content" class="content-wrapper">
                     <new-collection></new-collection>
                 </div>
             </main>

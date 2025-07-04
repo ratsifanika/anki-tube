@@ -13,8 +13,9 @@ export class CurrentCollection extends LitElement {
         flex-direction: column;
         align-items: center;
         width: 100%;
-        max-width: 1200px;
         padding: 10px;
+        padding-left: 50px;
+        padding-right: 50px;
         box-sizing: border-box;
       }
 
@@ -68,6 +69,7 @@ export class CurrentCollection extends LitElement {
           overflow: hidden;
           min-height: 200px;
           position: relative;
+          box-sizing: border-box;
         }
 
         .card-stats {
@@ -75,7 +77,7 @@ export class CurrentCollection extends LitElement {
           padding: 1rem;
           border-bottom: 1px solid #e9ecef;
           display: flex;
-          justify-content: space-between;
+          justify-content: left;
           align-items: center;
           font-size: 0.9rem;
           color: #6c757d;
@@ -114,13 +116,14 @@ export class CurrentCollection extends LitElement {
         }
         /* Zone de réponse */
         .answer-section {
-          width: 95%;
+          width: 100%;
           margin-left: auto;
           margin-right: auto;
           background: #f8f9fa;
           padding: 2rem;
           border-radius: 12px;
           margin-bottom: 2rem;
+          box-sizing: border-box;
         }
 
         .answer-section h3 {
@@ -295,7 +298,7 @@ export class CurrentCollection extends LitElement {
         <!-- Zone de réponse -->
         <div class="answer-section">
           <h3>Votre réponse</h3>
-          <textarea placeholder="Tapez votre réponse ici..."></textarea>
+          <textarea id="user-answer" placeholder="Tapez votre réponse ici..."></textarea>
           <div class="button-group">
             <button class="btn-primary" @click="${() => { /* handle respond action here */ }}">
               Valider la Réponse

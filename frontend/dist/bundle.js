@@ -93,8 +93,8 @@ let AppContainer = class AppContainer extends i {
     }
     _onNewCollection() {
         const mainContent = this.shadowRoot?.querySelector('#main-content');
-        mainContent.classList.remove('current-collection');
-        mainContent.classList.add('main-content');
+        // mainContent.classList.remove('current-collection');
+        // mainContent.classList.add('main-content');
         mainContent.innerHTML = '';
         const newCollection = document.createElement('new-collection');
         mainContent.appendChild(newCollection);
@@ -112,8 +112,8 @@ let AppContainer = class AppContainer extends i {
                 </nav>
             </aside>
 
-            <main id="main-content" class="main-content">
-                <div class="content-wrapper">
+            <main class="main-content">
+                <div id="main-content" class="content-wrapper">
                     <new-collection></new-collection>
                 </div>
             </main>
@@ -206,7 +206,7 @@ AppContainer.styles = [
 
             }
             .content-wrapper {
-                max-width: 800px;  /* ou 1000px, selon design */
+                max-width: 1000px;  /* ou 1000px, selon design */
                 margin: 0 auto;    /* ✅ centre horizontalement */
             }
             `
@@ -282,12 +282,14 @@ let NewCollection = class NewCollection extends i {
 NewCollection.styles = [
     i$3 `
       .container {
+        display:block;
         justify-content: center;
         align-items: center;
         width: 100%;
         max-width: 600px;
         padding: 20px;
         box-sizing: border-box;
+        margin: 0 auto; /* Center the container */
       }
 
       .search-box {
@@ -356,7 +358,7 @@ class Card {
         this.updatedAt = updatedAt;
     }
     static fromJSON(json) {
-        return new Card(json.id, json.front, json.back, json.difficulty || 1, json.tags || [], json.numberOfViews || 0, json.numberOfGoodAnswers || 0, new Date(json.createdAt), new Date(json.updatedAt));
+        return new Card(json.id, json.front, json.back, json.difficulty || 1, json.numberOfViews || 0, json.numberOfGoodAnswers || 0, json.tags || [], new Date(json.createdAt), new Date(json.updatedAt));
     }
     // Method to update the card's content
     update(front, back, tags = []) {
@@ -474,7 +476,7 @@ let CurrentCollection = class CurrentCollection extends i {
         <!-- Zone de réponse -->
         <div class="answer-section">
           <h3>Votre réponse</h3>
-          <textarea placeholder="Tapez votre réponse ici..."></textarea>
+          <textarea id="user-answer" placeholder="Tapez votre réponse ici..."></textarea>
           <div class="button-group">
             <button class="btn-primary" @click="${() => { }}">
               Valider la Réponse
@@ -506,8 +508,9 @@ CurrentCollection.styles = [
         flex-direction: column;
         align-items: center;
         width: 100%;
-        max-width: 1200px;
         padding: 10px;
+        padding-left: 50px;
+        padding-right: 50px;
         box-sizing: border-box;
       }
 
@@ -561,6 +564,7 @@ CurrentCollection.styles = [
           overflow: hidden;
           min-height: 200px;
           position: relative;
+          box-sizing: border-box;
         }
 
         .card-stats {
@@ -568,7 +572,7 @@ CurrentCollection.styles = [
           padding: 1rem;
           border-bottom: 1px solid #e9ecef;
           display: flex;
-          justify-content: space-between;
+          justify-content: left;
           align-items: center;
           font-size: 0.9rem;
           color: #6c757d;
@@ -607,13 +611,14 @@ CurrentCollection.styles = [
         }
         /* Zone de réponse */
         .answer-section {
-          width: 95%;
+          width: 100%;
           margin-left: auto;
           margin-right: auto;
           background: #f8f9fa;
           padding: 2rem;
           border-radius: 12px;
           margin-bottom: 2rem;
+          box-sizing: border-box;
         }
 
         .answer-section h3 {
