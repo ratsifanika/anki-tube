@@ -1,0 +1,95 @@
+import openai
+import json
+from fastapi import HTTPException
+from models.anki import AnkiCard
+from typing import List
+
+class CardGenerationService:
+    def __init__(self):
+        self.client = openai.OpenAI()
+
+    def generate_cards(self, transcript: str, difficulty: str, card_count: int, language: str) -> List[AnkiCard]:
+        """Génère des cartes Anki à partir d'une transcription"""
+
+        difficulty_prompts = {
+            "facile": "concepts de base et définitions simples",
+            "intermediaire": "compréhension approfondie et applications pratiques",
+            "avance": "analyse critique, synthèse et connexions complexes"
+        }
+
+        language_names = {
+            "fr": "français",
+            "en": "anglais",
+            "es": "espagnol"
+        }
+
+        system_prompt = f"""Tu es un expert en création de cartes d'apprentissage (flashcards) pour Anki.
+        Crée {card_count} cartes de qualité à partir de la transcription fournie.
+
+        Niveau de difficulté: {difficulty_prompts.get(difficulty, difficulty)}
+        Langue: {language_names.get(language, language)}
+
+        Règles importantes:
+        - Chaque carte doit avoir une question claire au recto et une réponse complète au verso
+        - Varie les types de questions: définitions, exemples, applications, comparaisons
+        - Utilise un langage approprié au niveau de difficulté
+        - Assure-toi que les réponses sont complètes mais concises
+        - Ajoute des tags pertinents pour chaque carte
+
+        Format de réponse JSON:
+        {{
+            "cards": [
+                {{
+                    "front": "Question claire et précise",
+                    "back": "Réponse complète avec explications",
+                    "tags": ["tag1", "tag2", "tag3"]
+                }}
+            ]
+        }}
+        """
+
+        user_prompt = f"""Transcription de la vidéo:
+
+        {transcript}
+
+        Génère exactement {card_count} cartes d'apprentissage en {language_names.get(language, language)} basées sur cette transcription."""
+
+        try:
+            #décommenter la ligne suivante si vous utilisez l'API OpenAI
+            self.client.base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
+            response = self.client.chat.completions.create(
+                model="gemini-2.0-flash",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                temperature=0.7,
+                max_tokens=4000
+            )
+
+            content = response.choices[0].message.content
+
+            # Parser la réponse JSON
+            try:
+                cards_data = json.loads(content)
+                cards = [AnkiCard(**card) for card in cards_data["cards"]]
+                return cards
+            except json.JSONDecodeError:
+                # Si le parsing JSON échoue, essayer d'extraire les cartes manuellement
+                return self._parse_cards_fallback(content)
+
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Erreur lors de la génération des cartes: {str(e)}")
+
+    def _parse_cards_fallback(self, content: str) -> List[AnkiCard]:
+        """Méthode de fallback pour parser les cartes si le JSON échoue"""
+        # Implementation basique de parsing de texte
+        cards = []
+        # Cette méthode devrait être implémentée selon le format de réponse de l'IA
+        # Pour simplifier, on retourne une carte d'exemple
+        cards.append(AnkiCard(
+            front="Exemple de question",
+            back="Exemple de réponse - Erreur de parsing détectée",
+            tags=["erreur", "fallback"]
+        ))
+        return cards
