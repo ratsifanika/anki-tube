@@ -31,9 +31,9 @@ app.add_middleware(
 )
 
 # Configuration OpenAI
-openai.api_key = os.getenv("GEMINI_API_KEY")
+openai.api_key = os.getenv("LLM_API_KEY")
 if not openai.api_key:
-    raise ValueError("OPENAI_API_KEY environment variable is required__")
+    raise ValueError("LLM_API_KEY environment variable is required__")
 
 
 # Service d'export Anki
@@ -65,20 +65,20 @@ async def generate_cards(request: CardGenerationRequest):
         # # 3. Nettoyer le fichier audio
         # transcription_service.cleanup_audio_file(audio_file)
 
-        # transcript = transcription_service.get_transcript(request.video_id, languages=[request.language])
-        # # 4. Générer les cartes avec OpenAI
-        # cards = card_generation_service.generate_cards(
-        #     transcript=transcript,
-        #     difficulty=request.difficulty,
-        #     card_count=request.card_count,
-        #     language=request.language
-        # )
+        transcript = transcription_service.get_transcript(request.video_id, languages=[request.language])
+        # 4. Générer les cartes avec OpenAI
+        cards = card_generation_service.generate_cards(
+            transcript=transcript,
+            difficulty=request.difficulty,
+            card_count=request.card_count,
+            language=request.language
+        )
 
-        cards = [
-            AnkiCard(front="Quelle est la capitale de la France ?", back="Paris", tags=["géographie", "France"]),
-            AnkiCard(front="Qui a écrit Les Misérables ?", back="Victor Hugo", tags=["littérature", "auteur"]),
-            AnkiCard(front="Quelle est la formule chimique de l'eau ?", back="H2O", tags=["chimie", "science"])
-        ]
+        # cards = [
+        #     AnkiCard(front="Quelle est la capitale de la France ?", back="Paris", tags=["géographie", "France"]),
+        #     AnkiCard(front="Qui a écrit Les Misérables ?", back="Victor Hugo", tags=["littérature", "auteur"]),
+        #     AnkiCard(front="Quelle est la formule chimique de l'eau ?", back="H2O", tags=["chimie", "science"])
+        # ]
         generation_time = time.time() - start_time
 
         return CardGenerationResponse(

@@ -3,10 +3,11 @@ import json
 from fastapi import HTTPException
 from models.anki import AnkiCard
 from typing import List
+import os
 
 class CardGenerationService:
     def __init__(self):
-        self.client = openai.OpenAI()
+        self.client = openai.OpenAI(api_key=os.getenv("LLM_API_KEY"))
 
     def generate_cards(self, transcript: str, difficulty: str, card_count: int, language: str) -> List[AnkiCard]:
         """Génère des cartes Anki à partir d'une transcription"""
@@ -55,10 +56,10 @@ class CardGenerationService:
         Génère exactement {card_count} cartes d'apprentissage en {language_names.get(language, language)} basées sur cette transcription."""
 
         try:
-            #décommenter la ligne suivante si vous utilisez l'API OpenAI
-            self.client.base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
+            #décommenter la ligne suivante si vous utilisez l'API GEMINI de Google
+            #self.client.base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
             response = self.client.chat.completions.create(
-                model="gemini-2.0-flash",
+                model="o4-mini",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
