@@ -8,11 +8,32 @@ services:
       - ./backend:/app
     environment:
       - PYTHONUNBUFFERED=1
+    depends_on:
+      - database
     #Remove --reload in production
     # --reload is useful for development, it will automatically reload the server when code changes
     # but it is not recommended for production use
     # because it can lead to performance issues and unexpected behavior.
     command: ["uvicorn", "main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]
+
+  database:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: ankitube
+      MYSQL_PASSWORD: ankitube
+      MYSQL_DATABASE: ankitube
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  pma:
+    image: phpmyadmin:5.2
+    ports:
+      - "8020:80"
+    environment:
+      PMA_HOST: database
+    depends_on:
+      - database
 
   frontend:
     build:
@@ -27,3 +48,6 @@ services:
       - ./frontend/node_modules:/app-host/node_modules
     command: npm run dev
     # command: npm run start #pourinitialiser le projet
+
+volumes:
+  mysql_data:
