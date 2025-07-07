@@ -15,6 +15,8 @@ from services.transcription_service import TranscriptionService
 from services.card_generation_service import CardGenerationService
 # import Anki exporter service
 from services.anki_exporter import AnkiExporter
+from users import fastapi_users, auth_backend, current_active_user
+from schemas import UserRead, UserCreate, UserUpdate
 # Charge les variables d'environnement depuis un fichier .env
 # Assurez-vous que votre fichier .env est dans le même répertoire que main.py
 load_dotenv()
@@ -42,6 +44,46 @@ if not openai.api_key:
 transcription_service = TranscriptionService()
 card_generation_service = CardGenerationService()
 anki_exporter = AnkiExporter()
+
+# Configuration CORS (important pour les applications frontend)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Remplacez par les domaines de votre frontend en production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Inclure les routeurs de FastAPI Users
+app.include_router(
+    fastapi_users.get_auth_router(auth_backend),
+    prefix="/auth/jwt",
+    tags=["auth"],
+)
+
+app.include_router(
+    fastapi_users.get_register_router(UserRead, UserCreate),
+    prefix="/auth",
+    tags=["auth"],
+)
+
+app.include_router(
+    fastapi_users.get_reset_password_router(),
+    prefix="/auth",
+    tags=["auth"],
+)
+
+app.include_router(
+    fastapi_users.get_verify_router(UserRead),
+    prefix="/auth",
+    tags=["auth"],
+)
+
+app.include_router(
+    fastapi_users.get_users_router(UserRead, UserUpdate),
+    prefix="/users",
+    tags=["users"],
+)
 
 # Routes API
 @app.get("/")

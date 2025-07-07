@@ -7,3 +7,8 @@ yt-dlp
 # whisper
 youtube-transcript-api
 dotenv
+sqlmodel
+mysql-connector-python
+alembic
+fastapi-users[sqlmodel]
+aiomysql
