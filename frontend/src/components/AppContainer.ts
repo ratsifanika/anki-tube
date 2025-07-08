@@ -2,6 +2,7 @@ import { html, LitElement, css } from "lit";
 import { customElement } from "lit/decorators.js";
 import { CurrentCollection } from "./CurrentCollection";
 import { NewCollection } from "./NewCollection";
+import { Router } from '@vaadin/router';
 
 @customElement('app-container')
 export class AppContainer extends LitElement {
@@ -127,22 +128,37 @@ export class AppContainer extends LitElement {
         mainContent.appendChild(newCollection);
     }
 
+    firstUpdated() {
+        const router = new Router(this.renderRoot.querySelector('#main-content')!);
+        router.setRoutes([
+        { path: '/', component: 'new-collection'},
+        { path: '/collection/:id', component: 'current-collection' },
+        { path: '/register', component: 'auth-register' },
+        { path: '/login', component: 'auth-login' },
+        { path: '/about', component: 'about-view' },
+        ]);
+    }
+
     render() {
         return html `
+        <nav>
+            <a href="/">Home</a>
+            <a href="/register">Registration</a>
+            <a href="/about">About</a>
+        </nav>
         <div class="app-container">
             <aside class="sidebar">
                 <div class="sidebar-header">
-                    <h3><a href="#" @click="${this._onNewCollection}">Nouvelle collection</a></h3>
+                    <h3><a href="/">Nouvelle collection</a></h3>
                     <button class="toggle-sidebar" @click="${this.toggleSidebar}">X</button>
                 </div>
                 <nav class="collection-list">
-                    <collection-list @collection-selected=${this._onCollectionSelected}></collection-list>
+                    <collection-list></collection-list>
                 </nav>
             </aside>
 
             <main class="main-content">
                 <div id="main-content" class="content-wrapper">
-                    <new-collection></new-collection>
                 </div>
             </main>
         </div>

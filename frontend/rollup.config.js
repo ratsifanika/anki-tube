@@ -36,11 +36,14 @@ export default {
       destDir: 'dist/assets',
       fileName: '[name]-[hash][extname]',
     }),
-    !isProduction && serve({
-      contentBase: 'dist',
-      port: 3000,
-      open: true,
-    }),
+    !isProduction
+    // && serve({
+    //   contentBase: 'dist',
+    //   historyApiFallback: true, // <--important pour le routing SPA
+    //   port: 3000,
+    //   open: true,
+    // })
+    ,
     !isProduction && livereload('dist'),
     isProduction && terser(),
   ],

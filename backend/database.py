@@ -3,28 +3,27 @@ from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 from fastapi_users.db import SQLAlchemyBaseUserTableUUID, SQLAlchemyUserDatabase
+from dotenv import load_dotenv
 
-DATABASE_URL = "mysql+mysqlconnector://ankitube:ankitube@database/ankitube"  # Chemin vers votre fichier SQLite
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
 
-class Base(DeclarativeBase):
-    pass
+import os
 
-class User(SQLAlchemyBaseUserTableUUID, Base):
-    # Ajoutez ici des champs supplémentaires si nécessaire, par exemple:
-    # first_name: Mapped[str | None] = mapped_column(String(255))
-    # last_name: Mapped[str | None] = mapped_column(String(255))
-    pass
+load_dotenv()
+
+DATABASE_URL = os.getenv("DATABASE_URL")  # Chemin vers votre fichier SQLite
+# DATABASE_URL=mysql+aiomysql://user:password@host/database
 
 engine = create_async_engine(DATABASE_URL)
-async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
 
-async def create_db_and_tables():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+# Création de la classe de session
+async_session_maker = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
-async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
+# Base pour les modèles
+Base = declarative_base()
+
+# Fonction pour obtenir la session de base de données
+async def get_async_session() -> AsyncSession:
     async with async_session_maker() as session:
         yield session
-
-async def get_user_db(session: AsyncSession):
-    yield SQLAlchemyUserDatabase(session, User)

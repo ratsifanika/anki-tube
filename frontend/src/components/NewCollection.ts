@@ -77,10 +77,9 @@ export class NewCollection extends LitElement {
             const collectionId = response.collectionId;
             const currentCollection = document.createElement('current-collection') as CurrentCollection;
             currentCollection.collectionId = collectionId;
-            // this.parentElement?.classList.remove('main-content');
-            // this.parentElement?.classList.add('current-collection');
-            this.parentElement?.appendChild(currentCollection);
-            this.remove(); // Remove the new collection component after creation
+            // this.parentElement?.appendChild(currentCollection);
+            // this.remove(); // Remove the new collection component after creation
+            window.location.href = '/collection/' + collectionId; // Redirect to the new collection
 
         } else {
             this.error = "(${response.status})Erreur lors de la création de la collection. Veuillez réessayer.";

@@ -3,6 +3,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import { API_BASE_URL } from "../config/api";
 import { Collection } from "../models/Collection";
 import { Card } from "../models/Card";
+import { RouterLocation } from '@vaadin/router';
 @customElement('current-collection')
 export class CurrentCollection extends LitElement {
 
@@ -213,13 +214,17 @@ export class CurrentCollection extends LitElement {
     `
   ];
 
-  @property({ type: String }) collectionId: string = '';
+  @property() collectionId: string | null = null;
   @state() collectionData:Collection|null = null;
   @state() isLoading: boolean = true;
   @state() currentCard: Card | null = null;
   totalCards:number = 10;
   openedCards:number = 5;
   correctAnswers:number = 3;
+
+  onBeforeEnter(location: RouterLocation) {
+    this.collectionId = location.params.id as string;
+  }
 
   protected willUpdate(_changedProperties: PropertyValues): void {
     if (_changedProperties.has('collectionId') && this.collectionId) {

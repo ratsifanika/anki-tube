@@ -33,22 +33,22 @@ export class CollectionList extends LitElement {
         }
 
         `;
-    private _selectCollection(collectionId: string) {
-        this.dispatchEvent(
-            new CustomEvent("collection-selected", {
-                detail: { collectionId },
-                bubbles: true,
-                composed: true,
-            })
-        );
-   }
+    // private _selectCollection(collectionId: string) {
+    //     this.dispatchEvent(
+    //         new CustomEvent("collection-selected", {
+    //             detail: { collectionId },
+    //             bubbles: true,
+    //             composed: true,
+    //         })
+    //     );
+    //}
 
     render() {
         return html`
             <ul>
-                <li part="list-item" @click="${() => this._selectCollection("1")}"><a href="#">Collection 1</a></li>
-                <li part="list-item" @click="${() => this._selectCollection("2")}"><a href="#">Collection 2</a></li>
-                <li part="list-item" @click="${() => this._selectCollection("3")}"><a href="#">Collection 3</a></li>
+                <li part="list-item"><a href="/collection/1">Collection 1</a></li>
+                <li part="list-item"><a href="/collection/2">Collection 2</a></li>
+                <li part="list-item"><a href="/collection/3">Collection 3</a></li>
             </ul>
         `;
     }

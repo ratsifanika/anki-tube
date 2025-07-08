@@ -15,8 +15,10 @@ from services.transcription_service import TranscriptionService
 from services.card_generation_service import CardGenerationService
 # import Anki exporter service
 from services.anki_exporter import AnkiExporter
-from users import fastapi_users, auth_backend, current_active_user
-from schemas import UserRead, UserCreate, UserUpdate
+
+from auth import auth_backend, fastapi_users, current_active_user, current_superuser
+from users import User, UserCreate, UserRead, UserUpdate
+from database import Base, engine
 # Charge les variables d'environnement depuis un fichier .env
 # Assurez-vous que votre fichier .env est dans le même répertoire que main.py
 load_dotenv()
@@ -26,7 +28,7 @@ app = FastAPI(title="AnkiTube API", version="1.0.0")
 # Configuration CORS pour permettre les requêtes depuis l'extension Chrome
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -35,24 +37,12 @@ app.add_middleware(
 # Configuration OpenAI
 openai.api_key = os.getenv("LLM_API_KEY")
 if not openai.api_key:
-    raise ValueError("LLM_API_KEY environment variable is required__")
-
-
-# Service d'export Anki
+    raise ValueError("LLM_API_KEY environment variable is required")
 
 # Instances des services
 transcription_service = TranscriptionService()
 card_generation_service = CardGenerationService()
 anki_exporter = AnkiExporter()
-
-# Configuration CORS (important pour les applications frontend)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Remplacez par les domaines de votre frontend en production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # Inclure les routeurs de FastAPI Users
 app.include_router(

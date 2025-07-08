@@ -1,8 +1,8 @@
 fastapi
-uvicorn # Recommandé si vous utilisez FastAPI
+uvicorn
 pydantic
 openai
-python-dotenv # Si vous utilisez os.environ avec un fichier .env
+python-dotenv
 yt-dlp
 # whisper
 youtube-transcript-api
@@ -10,5 +10,6 @@ dotenv
 sqlmodel
 mysql-connector-python
 alembic
-fastapi-users[sqlmodel]
+fastapi-users[sqlalchemy]
+sqlalchemy[asyncio]
 aiomysql

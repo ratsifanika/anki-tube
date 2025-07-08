@@ -4,5 +4,8 @@ import './components/NewCollection.ts';
 import './components/CurrentCollection.ts';
 import './components/CollectionList.ts';
 import './config/api.ts';
+import './views/AboutView.ts';
+import './views/AuthRegister.ts';
+import './views/AuthLogin.ts';
 
 

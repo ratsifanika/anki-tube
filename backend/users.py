@@ -1,47 +1,31 @@
-# users.py
-import uuid
-from typing import Optional
-from fastapi_users import FastAPIUsers
-from fastapi_users.authentication import AuthenticationBackend, BearerTransport, JWTStrategy
-from fastapi_users.manager import BaseUserManager
+from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTable, SQLAlchemyUserDatabase
+from sqlalchemy import Column, String, Boolean, Integer
+from sqlalchemy.ext.asyncio import AsyncSession
+from database import Base, get_async_session
+from fastapi_users import schemas
+from fastapi import Depends
 
-from database import User, get_user_db
-from schemas import UserCreate, UserRead, UserUpdate
+# Modèle User pour la base de données
+class User(SQLAlchemyBaseUserTable[int], Base):
+    __tablename__ = "users"
 
-SECRET = "YOUR_SECRET" # !!! CHANGE THIS IN PRODUCTION !!!
+    id = Column(Integer, primary_key=True, index=True)
+    first_name = Column(String(50), nullable=True)
+    last_name = Column(String(50), nullable=True)
 
-class UserManager(BaseUserManager[User, uuid.UUID]):
-    reset_password_token_secret = SECRET
-    verification_token_secret = SECRET
+# Schémas Pydantic pour les utilisateurs
+class UserRead(schemas.BaseUser[int]):
+    first_name: str | None = None
+    last_name: str | None = None
 
-    async def on_after_register(self, user: User, request: Optional[dict] = None):
-        print(f"User {user.id} has registered.")
+class UserCreate(schemas.BaseUserCreate):
+    first_name: str | None = None
+    last_name: str | None = None
 
-    async def on_after_forgot_password(self, user: User, token: str, request: Optional[dict] = None):
-        print(f"User {user.id} has requested a password reset. Token: {token}")
+class UserUpdate(schemas.BaseUserUpdate):
+    first_name: str | None = None
+    last_name: str | None = None
 
-    async def on_after_request_verify(self, user: User, token: str, request: Optional[dict] = None):
-        print(f"Verification requested for user {user.id}. Token: {token}")
-
-async def get_user_manager(user_db=Depends(get_user_db)):
-    yield UserManager(user_db)
-
-bearer_transport = BearerTransport(tokenUrl="auth/jwt/login")
-
-def get_jwt_strategy() -> JWTStrategy:
-    return JWTStrategy(secret=SECRET, lifetime_seconds=3600) # Durée de vie du token JWT (1 heure)
-
-auth_backend = AuthenticationBackend(
-    name="jwt",
-    transport=bearer_transport,
-    get_strategy=get_jwt_strategy,
-)
-
-fastapi_users = FastAPIUsers[User, uuid.UUID](
-    get_user_manager,
-    [auth_backend],
-)
-
-# Dépendance pour obtenir l'utilisateur courant authentifié
-current_active_user = fastapi_users.current_user(active=True)
-current_superuser = fastapi_users.current_user(active=True, superuser=True)
+# Fonction pour obtenir la base de données des utilisateurs
+async def get_user_db(session: AsyncSession = Depends(get_async_session)):
+    yield SQLAlchemyUserDatabase(session, User)
