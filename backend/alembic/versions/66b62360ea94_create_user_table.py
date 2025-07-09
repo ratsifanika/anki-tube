@@ -21,7 +21,7 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     """Upgrade schema."""
     op.create_table(
-        'user', # Nom de la table
+        'users', # Nom de la table
         sa.Column('id', sa.Uuid(), nullable=False), # Ou sqlalchemy_utils.UUIDType() si sa.Uuid n'est pas dispo
         sa.Column('email', sa.String(length=320), unique=True, nullable=False),
         sa.Column('hashed_password', sa.String(length=1024), nullable=False),
@@ -33,11 +33,11 @@ def upgrade() -> None:
         # sa.Column('last_name', sa.String(length=255), nullable=True),
         sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_user_email'), 'user', ['email'], unique=True) # Index sur l'email
+    op.create_index(op.f('ix_user_email'), 'users', ['email'], unique=True) # Index sur l'email
 
 
 def downgrade() -> None:
     """Downgrade schema."""
-    op.drop_index(op.f('ix_user_email'), table_name='user')
-    op.drop_table('user')
+    op.drop_index(op.f('ix_user_email'), table_name='users')
+    op.drop_table('users')
     pass

@@ -5,7 +5,7 @@ from sqlalchemy import pool
 from sqlmodel import SQLModel
 from alembic import context
 from models.anki import AnkiCard
-from database import User
+from users import User
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

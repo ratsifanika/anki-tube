@@ -9,22 +9,25 @@ from fastapi import Depends
 class User(SQLAlchemyBaseUserTable[int], Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
-    first_name = Column(String(50), nullable=True)
-    last_name = Column(String(50), nullable=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    # first_name = Column(String(50), nullable=True)
+    # last_name = Column(String(50), nullable=True)
 
 # Schémas Pydantic pour les utilisateurs
 class UserRead(schemas.BaseUser[int]):
-    first_name: str | None = None
-    last_name: str | None = None
+    # first_name: str | None = None
+    # last_name: str | None = None
+    pass
 
 class UserCreate(schemas.BaseUserCreate):
-    first_name: str | None = None
-    last_name: str | None = None
+    # first_name: str | None = None
+    # last_name: str | None = None
+    pass
 
 class UserUpdate(schemas.BaseUserUpdate):
-    first_name: str | None = None
-    last_name: str | None = None
+    # first_name: str | None = None
+    # last_name: str | None = None
+    pass
 
 # Fonction pour obtenir la base de données des utilisateurs
 async def get_user_db(session: AsyncSession = Depends(get_async_session)):
