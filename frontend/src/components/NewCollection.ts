@@ -110,7 +110,7 @@ export class NewCollection extends LitElement {
   render() {
     return html`
       <div class="container">
-        <h1>Crée une nouvelle collection</h1>
+        <h1>Créer une nouvelle collection</h1>
          <div class="search-box">
             <input type="text" placeholder="Saisir une URL" ?disabled=${this.loading}>
             <button @click=${this._handleClick} ?disabled=${this.loading}>🪄</button>

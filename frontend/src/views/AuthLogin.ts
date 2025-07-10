@@ -117,7 +117,7 @@ class AuthLogin extends LitElement {
         const formData = new URLSearchParams();
         formData.append('username', this.email);
         formData.append('password', this.password);
-
+        console.log('Attempting to login with:',API_BASE_URL);
         try {
             const response = await fetch(`${API_BASE_URL}/auth/jwt/login`, {
                 method: 'POST',
@@ -146,9 +146,8 @@ class AuthLogin extends LitElement {
                     detail: { token: token, user: data.user }, // data.user might be present if configured
                 });
                 this.dispatchEvent(authEvent);
+                setTimeout(()=> window.location.href = '/', 200);
 
-                // Example redirect after successful login
-                // window.location.href = '/dashboard';
             } else {
                 this.message = data.detail || 'Email ou mot de passe incorrect.';
                 this.isSuccess = false;

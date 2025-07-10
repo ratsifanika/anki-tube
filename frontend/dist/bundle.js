@@ -1,5 +1,5 @@
 
-(function(l, r) { if (!l || l.getElementById('livereloadscript')) return; r = l.createElement('script'); r.async = 1; r.src = '//' + (self.location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1'; r.id = 'livereloadscript'; l.getElementsByTagName('head')[0].appendChild(r) })(self.document);
+(function(l, r) { if (!l || l.getElementById('livereloadscript')) return; r = l.createElement('script'); r.async = 1; r.src = '//' + (self.location.host || 'localhost').split(':')[0] + ':35730/livereload.js?snipver=1'; r.id = 'livereloadscript'; l.getElementsByTagName('head')[0].appendChild(r) })(self.document);
 /******************************************************************************
 Copyright (c) Microsoft Corporation.
 
@@ -2549,11 +2549,7 @@ let AppContainer = class AppContainer extends i {
     }
     render() {
         return x `
-        <nav>
-            <a href="/">Home</a>
-            <a href="/register">Registration</a>
-            <a href="/about">About</a>
-        </nav>
+       <app-nav></app-nav>
         <div class="app-container">
             <aside class="sidebar">
                 <div class="sidebar-header">
@@ -2719,7 +2715,7 @@ let NewCollection = class NewCollection extends i {
     render() {
         return x `
       <div class="container">
-        <h1>Crée une nouvelle collection</h1>
+        <h1>Créer une nouvelle collection</h1>
          <div class="search-box">
             <input type="text" placeholder="Saisir une URL" ?disabled=${this.loading}>
             <button @click=${this._handleClick} ?disabled=${this.loading}>🪄</button>
@@ -3446,6 +3442,7 @@ let AuthLogin = class AuthLogin extends i {
         const formData = new URLSearchParams();
         formData.append('username', this.email);
         formData.append('password', this.password);
+        console.log('Attempting to login with:', API_BASE_URL);
         try {
             const response = await fetch(`${API_BASE_URL}/auth/jwt/login`, {
                 method: 'POST',
@@ -3471,8 +3468,7 @@ let AuthLogin = class AuthLogin extends i {
                     detail: { token: token, user: data.user }, // data.user might be present if configured
                 });
                 this.dispatchEvent(authEvent);
-                // Example redirect after successful login
-                // window.location.href = '/dashboard';
+                setTimeout(() => window.location.href = '/', 200);
             }
             else {
                 this.message = data.detail || 'Email ou mot de passe incorrect.';
@@ -3564,4 +3560,310 @@ __decorate([
 AuthLogin = __decorate([
     t('auth-login')
 ], AuthLogin);
+
+class InvalidTokenError extends Error {
+}
+InvalidTokenError.prototype.name = "InvalidTokenError";
+function b64DecodeUnicode(str) {
+    return decodeURIComponent(atob(str).replace(/(.)/g, (m, p) => {
+        let code = p.charCodeAt(0).toString(16).toUpperCase();
+        if (code.length < 2) {
+            code = "0" + code;
+        }
+        return "%" + code;
+    }));
+}
+function base64UrlDecode(str) {
+    let output = str.replace(/-/g, "+").replace(/_/g, "/");
+    switch (output.length % 4) {
+        case 0:
+            break;
+        case 2:
+            output += "==";
+            break;
+        case 3:
+            output += "=";
+            break;
+        default:
+            throw new Error("base64 string is not of the correct length");
+    }
+    try {
+        return b64DecodeUnicode(output);
+    }
+    catch (err) {
+        return atob(output);
+    }
+}
+function jwtDecode(token, options) {
+    if (typeof token !== "string") {
+        throw new InvalidTokenError("Invalid token specified: must be a string");
+    }
+    options || (options = {});
+    const pos = options.header === true ? 0 : 1;
+    const part = token.split(".")[pos];
+    if (typeof part !== "string") {
+        throw new InvalidTokenError(`Invalid token specified: missing part #${pos + 1}`);
+    }
+    let decoded;
+    try {
+        decoded = base64UrlDecode(part);
+    }
+    catch (e) {
+        throw new InvalidTokenError(`Invalid token specified: invalid base64 for part #${pos + 1} (${e.message})`);
+    }
+    try {
+        return JSON.parse(decoded);
+    }
+    catch (e) {
+        throw new InvalidTokenError(`Invalid token specified: invalid json for part #${pos + 1} (${e.message})`);
+    }
+}
+
+// frontend/auth-state.ts
+// 2. Fonction pour vérifier si l'utilisateur est authentifié
+function isAuthenticated() {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+        return false;
+    }
+    try {
+        // jwtDecode retourne un type any par défaut, nous le castons pour accéder à 'exp'
+        const decodedToken = jwtDecode(token);
+        const currentTime = Date.now() / 1000; // Temps actuel en secondes
+        if (decodedToken.exp < currentTime) {
+            console.warn('Token expiré. Déconnexion automatique.');
+            logout(); // Déconnecte l'utilisateur si le token est expiré
+            return false;
+        }
+        return true;
+    }
+    catch (error) {
+        console.error('Erreur lors du décodage du token JWT:', error);
+        logout(); // Token invalide ou corrompu
+        return false;
+    }
+}
+// 3. Fonction pour récupérer les informations de l'utilisateur
+function getUserInfo() {
+    if (isAuthenticated()) {
+        const userInfoString = localStorage.getItem('user_info');
+        if (userInfoString) {
+            // Caster la chaîne JSON parsée en UserInfo
+            return JSON.parse(userInfoString);
+        }
+        // Si les infos ne sont pas dans localStorage, essayez de les extraire du token
+        const token = localStorage.getItem('access_token');
+        if (token) {
+            try {
+                // Caster le token décodé en UserInfo
+                return jwtDecode(token);
+            }
+            catch (e) {
+                console.error("Erreur lors du décodage du token pour UserInfo:", e);
+                return null;
+            }
+        }
+    }
+    return null;
+}
+// 4. Fonction pour la déconnexion
+function logout() {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('user_info');
+    // Déclenche un événement global pour que d'autres composants puissent réagir à la déconnexion
+    window.dispatchEvent(new CustomEvent('auth-status-changed', {
+        detail: { isAuthenticated: false, token: null, user: null }
+    }));
+}
+
+let AppNav = class AppNav extends i {
+    constructor() {
+        super();
+        this.isAuthenticated = false;
+        this.userInfo = null;
+        this._updateAuthState();
+        // Écoute les changements globaux de l'état d'authentification
+        window.addEventListener('auth-status-changed', this._handleAuthStatusChange.bind(this));
+    }
+    // Met à jour l'état interne du composant quand l'état d'auth global change
+    _handleAuthStatusChange() {
+        this._updateAuthState();
+    }
+    // Récupère l'état d'authentification et les infos utilisateur
+    _updateAuthState() {
+        this.isAuthenticated = isAuthenticated();
+        this.userInfo = getUserInfo();
+    }
+    // Gère la déconnexion
+    _handleLogout() {
+        logout(); // Appelle la fonction de déconnexion du service d'authentification
+    }
+    // Rend les liens de navigation cliquables sans recharger la page
+    _handleClick(e) {
+        if (e.target instanceof HTMLAnchorElement && e.target.href) {
+            e.preventDefault();
+            // Utilise vaadin-router pour naviguer
+            window.history.pushState({}, '', e.target.href);
+            window.dispatchEvent(new PopStateEvent('popstate'));
+        }
+    }
+    render() {
+        return x `
+            <nav @click=${this._handleClick}>
+                <a href="/" class="logo">MonApp</a>
+
+                <div class="nav-links">
+                    <a href="/">Accueil</a>
+
+                    ${this.isAuthenticated
+            ? x `
+                              <a href="/">home</a>
+                          `
+            : x `
+                              <a href="/login">Se connecter</a>
+                              <a href="/register">S'enregistrer</a>
+                          `}
+                </div>
+
+                <div class="auth-controls">
+                    ${this.isAuthenticated
+            ? x `
+                              <span class="welcome-message"
+                                  >Bienvenue, ${this.userInfo?.email || 'utilisateur'}!</span
+                              >
+                              <button @click=${this._handleLogout}>Déconnexion</button>
+                          `
+            : ''}
+                </div>
+            </nav>
+        `;
+    }
+};
+AppNav.styles = i$3 `
+        :host {
+            display: block;
+            width: 100%;
+            background-color: #2c3e50; /* Couleur sombre pour la barre de navigation */
+            color: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            flex-wrap: wrap; /* Permet aux éléments de passer à la ligne sur petits écrans */
+        }
+
+        .logo {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #4CAF50; /* Vert éclatant pour le logo */
+            text-decoration: none;
+            margin-right: 20px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 25px; /* Espace entre les liens */
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 5px 0;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover,
+        .nav-links a.active {
+            color: #4CAF50; /* Changement de couleur au survol/actif */
+        }
+
+        .auth-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .welcome-message {
+            font-size: 0.95em;
+            color: #ecf0f1; /* Gris clair */
+            margin-right: 10px;
+        }
+
+        button {
+            background-color: #e74c3c; /* Rouge pour déconnexion */
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #c0392b;
+        }
+
+        /* Styles Responsifs */
+        @media (max-width: 768px) {
+            nav {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 10px 15px;
+            }
+
+            .logo {
+                margin-bottom: 15px;
+                width: 100%;
+                text-align: center;
+            }
+
+            .nav-links, .auth-controls {
+                width: 100%;
+                justify-content: center; /* Centrer les liens */
+                margin-bottom: 10px;
+            }
+
+            .nav-links a, .auth-controls button, .welcome-message {
+                margin-bottom: 5px; /* Espacement vertical */
+            }
+
+            .auth-controls {
+                margin-top: 10px;
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+                padding-top: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .nav-links {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .nav-links a {
+                padding: 8px 0;
+                width: 100%;
+                text-align: center;
+            }
+        }
+    `;
+__decorate([
+    n({ type: Boolean })
+], AppNav.prototype, "isAuthenticated", void 0);
+__decorate([
+    n({ type: Object })
+], AppNav.prototype, "userInfo", void 0);
+AppNav = __decorate([
+    t('app-nav')
+], AppNav);
 //# sourceMappingURL=bundle.js.map

@@ -141,11 +141,7 @@ export class AppContainer extends LitElement {
 
     render() {
         return html `
-        <nav>
-            <a href="/">Home</a>
-            <a href="/register">Registration</a>
-            <a href="/about">About</a>
-        </nav>
+       <app-nav></app-nav>
         <div class="app-container">
             <aside class="sidebar">
                 <div class="sidebar-header">
