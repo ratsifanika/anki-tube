@@ -1,5 +1,5 @@
 
-(function(l, r) { if (!l || l.getElementById('livereloadscript')) return; r = l.createElement('script'); r.async = 1; r.src = '//' + (self.location.host || 'localhost').split(':')[0] + ':35730/livereload.js?snipver=1'; r.id = 'livereloadscript'; l.getElementsByTagName('head')[0].appendChild(r) })(self.document);
+(function(l, r) { if (!l || l.getElementById('livereloadscript')) return; r = l.createElement('script'); r.async = 1; r.src = '//' + (self.location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1'; r.id = 'livereloadscript'; l.getElementsByTagName('head')[0].appendChild(r) })(self.document);
 /******************************************************************************
 Copyright (c) Microsoft Corporation.
 
@@ -2663,6 +2663,9 @@ AppContainer = __decorate([
     t('app-container')
 ], AppContainer);
 
+// src/config/api.js
+const API_BASE_URL = 'http://localhost:8030';
+
 let NewCollection = class NewCollection extends i {
     constructor() {
         super(...arguments);
@@ -2684,8 +2687,6 @@ let NewCollection = class NewCollection extends i {
                 const collectionId = response.collectionId;
                 const currentCollection = document.createElement('current-collection');
                 currentCollection.collectionId = collectionId;
-                // this.parentElement?.appendChild(currentCollection);
-                // this.remove(); // Remove the new collection component after creation
                 window.location.href = '/collection/' + collectionId; // Redirect to the new collection
             }
             else {
@@ -2699,18 +2700,29 @@ let NewCollection = class NewCollection extends i {
             this.loading = false;
         }
     }
-    _callBackend(url) {
-        return new Promise((resolve) => {
-            // Simulate a network request to create a new collection
-            setTimeout(() => {
-                const ok = Math.random() > 0.2; // Simulate a success rate of 80%
-                if (!ok) {
-                    resolve({ status: 500, collectionId: "" });
-                    return;
-                }
-                resolve({ status: 200, collectionId: "mock-collection-id" });
-            }, 500);
-        });
+    async _callBackend(url) {
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/generate-cards`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    video_url: url,
+                    difficulty: 'intermediaire',
+                    card_count: 5,
+                    language: 'en'
+                })
+            });
+            if (!res.ok) {
+                return { status: res.status, collectionId: "" };
+            }
+            const data = await res.json();
+            return { status: res.status, collectionId: data.collectionId };
+        }
+        catch {
+            return { status: 500, collectionId: "" };
+        }
     }
     render() {
         return x `
@@ -2788,9 +2800,6 @@ __decorate([
 NewCollection = __decorate([
     t('new-collection')
 ], NewCollection);
-
-// src/config/api.js
-const API_BASE_URL = 'http://localhost:8030';
 
 class Card {
     constructor(id, front, back, difficulty = 1, numberOfViews = 0, numberOfGoodAnswers = 0, tags = [], createdAt = new Date(), updatedAt = new Date()) {

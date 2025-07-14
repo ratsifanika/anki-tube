@@ -1,12 +1,43 @@
-from sqlmodel import SQLModel, Field
-from typing import List, Optional
 import json
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
+from sqlalchemy.orm import relationship
+from sqlalchemy.ext.declarative import declarative_base
+from sqlmodel import SQLModel
+from typing import List, Optional
+from schemas.anki import AnkiCardSchema
+from pydantic import BaseModel
+import datetime
+from database import Base
 
-class AnkiCard(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    front: str
-    back: str
-    tags_json: str = Field(default="[]", alias="tags")
+class Collection(Base):
+    __tablename__ = "collections"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    video_id = Column(String(255), nullable=False)
+    video_title = Column(String(255), nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.now(),nullable=False)
+
+    # Clé étrangère vers User
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+
+    # Relations
+    user = relationship("User", back_populates="collections")
+    anki_cards = relationship("AnkiCard", back_populates="collection", cascade="all, delete-orphan")
+
+# Modèle AnkiCard (SQLAlchemy classique pour compatibilité)
+class AnkiCard(Base):
+    __tablename__ = "anki_cards"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    front = Column(String(255), nullable=False)
+    back = Column(String(255), nullable=False)
+    tags_json = Column(String(255), default="[]", nullable=False)
+
+    # Clé étrangère vers Collection
+    collection_id = Column(Integer, ForeignKey("collections.id", ondelete="CASCADE"), nullable=True)
+
+    # Relation vers Collection
+    collection = relationship("Collection", back_populates="anki_cards")
 
     @property
     def tags(self) -> List[str]:
@@ -17,20 +48,19 @@ class AnkiCard(SQLModel, table=True):
         self.tags_json = json.dumps(value)
 
 
-class AnkiExportRequest(SQLModel):
-    cards: List[AnkiCard]
+class AnkiExportRequest(BaseModel):
+    cards: List[AnkiCardSchema]
     deck_name: str = "AnkiTube Cards"
 
 
 class CardGenerationRequest(SQLModel):
-    video_id: str
-    video_title: str
+    video_url: str
     difficulty: str = "intermediaire"
-    card_count: int = 15
+    card_count: int = 10
     language: str = "fr"
 
 
-class CardGenerationResponse(SQLModel):
-    cards: List[AnkiCard]
+class CardGenerationResponse(BaseModel):
+    cards: List[AnkiCardSchema]
     video_title: str
     generation_time: float

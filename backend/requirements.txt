@@ -13,3 +13,4 @@ alembic
 fastapi-users[sqlalchemy]
 sqlalchemy[asyncio]
 aiomysql
+pytube

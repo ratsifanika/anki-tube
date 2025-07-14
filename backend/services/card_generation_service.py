@@ -59,7 +59,7 @@ class CardGenerationService:
             #décommenter la ligne suivante si vous utilisez l'API GEMINI de Google
             #self.client.base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
             response = self.client.chat.completions.create(
-                model="o4-mini",
+                model="gpt-4.1-nano",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}

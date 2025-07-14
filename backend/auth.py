@@ -5,8 +5,12 @@ from fastapi_users.authentication import (
     JWTStrategy,
 )
 from users import User, get_user_db
-from fastapi import Depends
+from fastapi import Depends, Request
 from fastapi_users import BaseUserManager
+from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import HTTPException
+from sqlalchemy import select
+from typing import Optional
 
 # Configuration JWT
 SECRET = "your-secret-key-here-change-this-in-production"
@@ -48,6 +52,11 @@ fastapi_users = FastAPIUsers[User, int](
     get_user_manager,
     [auth_backend],
 )
+async def current_active_user_optional(request: Request) -> Optional[User]:
+    try:
+        return await fastapi_users.current_user(optional=True)(request)
+    except Exception:
+        return None  # Aucun utilisateur connect
 
 # Raccourcis pour l'authentification
 current_active_user = fastapi_users.current_user(active=True)

@@ -1,6 +1,7 @@
 import { LitElement, html, css } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { CurrentCollection } from "./CurrentCollection";
+import { API_BASE_URL } from "../config/api";
 
 @customElement('new-collection')
 export class NewCollection extends LitElement {
@@ -77,8 +78,6 @@ export class NewCollection extends LitElement {
             const collectionId = response.collectionId;
             const currentCollection = document.createElement('current-collection') as CurrentCollection;
             currentCollection.collectionId = collectionId;
-            // this.parentElement?.appendChild(currentCollection);
-            // this.remove(); // Remove the new collection component after creation
             window.location.href = '/collection/' + collectionId; // Redirect to the new collection
 
         } else {
@@ -92,19 +91,31 @@ export class NewCollection extends LitElement {
     }
   }
 
-   _callBackend(url: string):Promise<{status: number, collectionId: string}>  {
-    return new Promise((resolve) => {
-
-      // Simulate a network request to create a new collection
-      setTimeout(() => {
-        const ok = Math.random() > 0.2; // Simulate a success rate of 80%
-        if (!ok) {
-            resolve({ status: 500, collectionId: "" });
-            return;
-        }
-            resolve({ status: 200, collectionId: "mock-collection-id" });
-        }, 500);
+   async _callBackend(url: string):Promise<{status: number, collectionId: string}>  {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/generate-cards`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(
+        {
+          video_url: url,
+          difficulty: 'intermediaire',
+          card_count: 5,
+          language: 'en'
+         }
+      )
       });
+      if (!res.ok) {
+      return { status: res.status, collectionId: "" };
+      }
+      const data = await res.json();
+      return { status: res.status, collectionId: data.collectionId };
+      } catch {
+        return { status: 500, collectionId: "" };
+      }
+
     }
 
   render() {

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 import os
@@ -8,7 +8,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 from pathlib import Path
 # import pydantic models
-from models.anki import AnkiCard, CardGenerationResponse, AnkiExportRequest, CardGenerationRequest
+from models.anki import CardGenerationResponse, AnkiExportRequest, CardGenerationRequest
 # import transcription service
 from services.transcription_service import TranscriptionService
 # import card generation service
@@ -16,9 +16,17 @@ from services.card_generation_service import CardGenerationService
 # import Anki exporter service
 from services.anki_exporter import AnkiExporter
 
-from auth import auth_backend, fastapi_users, current_active_user, current_superuser
+from auth import auth_backend, fastapi_users, current_active_user_optional
 from users import User, UserCreate, UserRead, UserUpdate
 from database import Base, engine
+
+from services.youtube_service import YoutubeService
+from database import get_async_session
+from sqlalchemy.ext.asyncio import AsyncSession
+from typing import List, Optional
+from services.anki_db import save_cards_to_db
+# from models.init_relations import init_models
+
 # Charge les variables d'environnement depuis un fichier .env
 # Assurez-vous que votre fichier .env est dans le même répertoire que main.py
 load_dotenv()
@@ -41,8 +49,11 @@ if not openai.api_key:
 
 # Instances des services
 transcription_service = TranscriptionService()
+youtube_service = YoutubeService()
 card_generation_service = CardGenerationService()
 anki_exporter = AnkiExporter()
+
+
 
 # Inclure les routeurs de FastAPI Users
 app.include_router(
@@ -75,13 +86,17 @@ app.include_router(
     tags=["users"],
 )
 
+# init_models()
+
 # Routes API
 @app.get("/")
 async def root():
     return {"message": "AnkiTube API is running"}
 
 @app.post("/api/generate-cards", response_model=CardGenerationResponse)
-async def generate_cards(request: CardGenerationRequest):
+async def generate_cards(request: CardGenerationRequest,
+                         db: AsyncSession = Depends(get_async_session),
+                         user: Optional[User] = Depends(current_active_user_optional)):
     """Génère des cartes Anki à partir d'une vidéo YouTube"""
 
     import time
@@ -90,14 +105,17 @@ async def generate_cards(request: CardGenerationRequest):
     try:
         # 1. Extraire l'audio de YouTube
         # audio_file, video_title = transcription_service.extract_audio_from_youtube(request.video_id)
-
         # # 2. Transcrire l'audio
         # transcript = transcription_service.transcribe_audio(audio_file)
 
         # # 3. Nettoyer le fichier audio
         # transcription_service.cleanup_audio_file(audio_file)
 
-        transcript = transcription_service.get_transcript(request.video_id, languages=[request.language])
+        video_id = youtube_service.get_youtube_id(request.video_url)
+        video_title = youtube_service.get_youtube_title(request.video_url)
+        print(f"video_id:{video_id}, video_title:{video_title}")
+
+        transcript = transcription_service.get_transcript(video_id, languages=[request.language])
         # 4. Générer les cartes avec OpenAI
         cards = card_generation_service.generate_cards(
             transcript=transcript,
@@ -105,20 +123,18 @@ async def generate_cards(request: CardGenerationRequest):
             card_count=request.card_count,
             language=request.language
         )
+        print(f"Generated cards: {cards}")
 
-        # cards = [
-        #     AnkiCard(front="Quelle est la capitale de la France ?", back="Paris", tags=["géographie", "France"]),
-        #     AnkiCard(front="Qui a écrit Les Misérables ?", back="Victor Hugo", tags=["littérature", "auteur"]),
-        #     AnkiCard(front="Quelle est la formule chimique de l'eau ?", back="H2O", tags=["chimie", "science"])
-        # ]
         generation_time = time.time() - start_time
 
-        return CardGenerationResponse(
+        collection_id = await save_cards_to_db(
+            db=db,
             cards=cards,
-            # video_title=video_title,
-            video_title=request.video_title,
-            generation_time=generation_time
+            video_id=video_id,
+            video_title=video_title,
+            current_user=user
         )
+        return {"collection_id": collection_id}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur lors de la génération: {str(e)}")

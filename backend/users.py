@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database import Base, get_async_session
 from fastapi_users import schemas
 from fastapi import Depends
+from sqlalchemy.orm import relationship
 
 # Modèle User pour la base de données
 class User(SQLAlchemyBaseUserTable[int], Base):
@@ -12,6 +13,7 @@ class User(SQLAlchemyBaseUserTable[int], Base):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     # first_name = Column(String(50), nullable=True)
     # last_name = Column(String(50), nullable=True)
+    collections = relationship("Collection", back_populates="user", cascade="all, delete-orphan")
 
 # Schémas Pydantic pour les utilisateurs
 class UserRead(schemas.BaseUser[int]):
