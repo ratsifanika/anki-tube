@@ -1,9 +1,11 @@
 from youtube_transcript_api import YouTubeTranscriptApi
 import yt_dlp
+import os
+import whisper
 
 class TranscriptionService:
-    # def __init__(self):
-    #     self.model = whisper.load_model("base")
+    def __init__(self):
+        self.model = whisper.load_model("tiny")#other options: "tiny","base", "small", "medium", "large"
 
     # Fetch transcript from a youtube video using the video id
     def get_transcript(self, video_id: str, languages: list = None) -> str:

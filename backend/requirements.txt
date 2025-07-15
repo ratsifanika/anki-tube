@@ -4,7 +4,7 @@ pydantic
 openai
 python-dotenv
 yt-dlp
-# whisper
+git+https://github.com/openai/whisper.git
 youtube-transcript-api
 dotenv
 sqlmodel

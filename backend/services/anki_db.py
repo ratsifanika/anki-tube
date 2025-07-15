@@ -9,7 +9,7 @@ from sqlalchemy import select
 
 async def get_anonymous(db: AsyncSession) -> User:
     result = await db.execute(
-        select(User).where(User.username == "anonymous@anonymous.com")
+        select(User).where(User.email == "anonymous@anonymous.com")
     )
     user = result.scalar_one_or_none()
     if not user:

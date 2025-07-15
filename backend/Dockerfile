@@ -3,7 +3,13 @@
 FROM python:3.13-slim-bookworm
 
 # Update system packages to patch vulnerabilities
-RUN apt-get update && apt-get upgrade -y && apt-get clean && rm -rf /var/lib/apt/lists/*
+# Installer git et ffmpeg + mise à jour du système, le tout en une seule commande
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y git ffmpeg && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 
 # Installer le gestionnaire de paquets uv
 RUN pip install uv

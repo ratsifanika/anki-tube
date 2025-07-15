@@ -103,19 +103,20 @@ async def generate_cards(request: CardGenerationRequest,
     start_time = time.time()
 
     try:
+        video_id = youtube_service.get_youtube_id(request.video_url)
         # 1. Extraire l'audio de YouTube
-        # audio_file, video_title = transcription_service.extract_audio_from_youtube(request.video_id)
+        audio_file, video_title = transcription_service.extract_audio_from_youtube(video_id)
         # # 2. Transcrire l'audio
-        # transcript = transcription_service.transcribe_audio(audio_file)
+        transcript = transcription_service.transcribe_audio(audio_file)
 
         # # 3. Nettoyer le fichier audio
         # transcription_service.cleanup_audio_file(audio_file)
 
-        video_id = youtube_service.get_youtube_id(request.video_url)
-        video_title = youtube_service.get_youtube_title(request.video_url)
+
+        # video_title = youtube_service.get_youtube_title(request.video_url)
         print(f"video_id:{video_id}, video_title:{video_title}")
 
-        transcript = transcription_service.get_transcript(video_id, languages=[request.language])
+        # transcript = transcription_service.get_transcript(video_id, languages=[request.language])
         # 4. Générer les cartes avec OpenAI
         cards = card_generation_service.generate_cards(
             transcript=transcript,
