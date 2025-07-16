@@ -32,6 +32,9 @@ class AnkiCard(Base):
     front = Column(String(255), nullable=False)
     back = Column(String(255), nullable=False)
     tags_json = Column(String(255), default="[]", nullable=False)
+    seen = Column(Integer, default=0, nullable=True)
+    answered_correctly = Column(Integer, default=0, nullable=False)
+    updated_at = Column(DateTime, default=datetime.datetime.now(), onupdate=datetime.datetime.now(),nullable=False)
 
     # Clé étrangère vers Collection
     collection_id = Column(Integer, ForeignKey("collections.id", ondelete="CASCADE"), nullable=True)
