@@ -132,12 +132,7 @@ class AuthRegister extends LitElement {
             const data = await response.json();
 
             if (response.ok) {
-                this.message = 'Enregistrement réussi! Veuillez vous connecter.';
-                this.isSuccess = true;
-                this.email = ''; // Clear form
-                this.password = ''; // Clear form
-                // Optionally, redirect to login page
-                // window.location.href = '/login';
+               await this._loginUser(this.email, this.password);
             } else {
                 this.message = data.detail || 'Erreur lors de l\'enregistrement.';
                 this.isSuccess = false;
@@ -146,6 +141,68 @@ class AuthRegister extends LitElement {
             this.message = 'Erreur réseau. Veuillez réessayer.';
             this.isSuccess = false;
             console.error('Registration error:', error);
+        }
+    }
+
+    async _loginUser(email: string, password: string) {
+        try {
+            // Utilisation du endpoint de login de FastAPI-users
+            // Selon la configuration, cela peut être /auth/login ou /auth/jwt/login
+            const loginResponse = await fetch(`${API_BASE_URL}/auth/jwt/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    username: email, // FastAPI-users utilise 'username' même pour l'email
+                    password: password,
+                }),
+            });
+
+            const loginData = await loginResponse.json();
+
+            if (loginResponse.ok) {
+                // Stockage du token JWT
+                localStorage.setItem('access_token', loginData.access_token);
+                if (loginData.refresh_token) {
+                    localStorage.setItem('refresh_token', loginData.refresh_token);
+                }
+
+                this.message = 'Enregistrement réussi! Connexion automatique...';
+                this.isSuccess = true;
+
+                // Effacer le formulaire
+                this.email = '';
+                this.password = '';
+
+                // Émettre un événement pour notifier les autres composants
+                this.dispatchEvent(new CustomEvent('user-logged-in', {
+                    bubbles: true,
+                    composed: true,
+                    detail: { user: loginData }
+                }));
+
+                // Redirection vers la page d'accueil ou dashboard
+                setTimeout(() => {
+                    window.location.href = '/'; // ou votre page d'accueil
+                }, 1500);
+
+            } else {
+                // Si la connexion automatique échoue, rediriger vers login
+                this.message = 'Enregistrement réussi! Veuillez vous connecter.';
+                this.isSuccess = true;
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 2000);
+            }
+        } catch (error) {
+            console.error('Auto-login error:', error);
+            // En cas d'erreur de connexion auto, rediriger vers login
+            this.message = 'Enregistrement réussi! Veuillez vous connecter.';
+            this.isSuccess = true;
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 2000);
         }
     }
 }
