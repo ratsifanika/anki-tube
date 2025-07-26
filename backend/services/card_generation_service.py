@@ -4,6 +4,8 @@ from fastapi import HTTPException
 from models.anki import AnkiCard
 from typing import List
 import os
+import random
+import datetime
 
 class CardGenerationService:
     def __init__(self):
@@ -93,4 +95,34 @@ class CardGenerationService:
             back="Exemple de réponse - Erreur de parsing détectée",
             tags=["erreur", "fallback"]
         ))
+        return cards
+
+    def generate_random_cards(count: int, collection_id: int = None) -> List[AnkiCard]:
+        """
+        Génère une liste de cartes AnkiCard pour les tests ou le peuplement initial.
+        
+        :param count: Nombre de cartes à générer
+        :param collection_id: ID de collection à affecter à toutes les cartes (optionnel)
+        :return: Liste d'instances de AnkiCard
+        """
+        cards = []
+        for i in range(count):
+            front = f"Question {i+1}"
+            back = f"Réponse {i+1}"
+            tags = [f"tag{i%3}", f"theme{i%2}"]
+            seen = random.randint(0, 10)
+            answered_correctly = random.randint(0, seen) if seen > 0 else 0
+            updated_at = datetime.datetime.now()
+
+            card = AnkiCard(
+                front=front,
+                back=back,
+                tags_json=json.dumps(tags),
+                seen=seen,
+                answered_correctly=answered_correctly,
+                updated_at=updated_at,
+                collection_id=collection_id
+            )
+            cards.append(card)
+
         return cards

@@ -118,12 +118,13 @@ async def generate_cards(request: CardGenerationRequest,
 
         # transcript = transcription_service.get_transcript(video_id, languages=[request.language])
         # 4. Générer les cartes avec OpenAI
-        cards = card_generation_service.generate_cards(
-            transcript=transcript,
-            difficulty=request.difficulty,
-            card_count=request.card_count,
-            language=request.language
-        )
+        # cards = card_generation_service.generate_cards(
+        #     transcript=transcript,
+        #     difficulty=request.difficulty,
+        #     card_count=request.card_count,
+        #     language=request.language
+        # )
+        cards = card_generation_service.generate_random_cards(request.card_count)
         print(f"Generated cards: {cards}")
 
         generation_time = time.time() - start_time

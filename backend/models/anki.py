@@ -49,6 +49,13 @@ class AnkiCard(Base):
     @tags.setter
     def tags(self, value: List[str]):
         self.tags_json = json.dumps(value)
+    
+    def __str__(self):
+        """
+        Cette méthode définit la représentation textuelle de l'objet.
+        Elle sera utilisée par print().
+        """
+        return f"AnkiCard(front='{self.front}', back='{self.back}')"
 
 
 class AnkiExportRequest(BaseModel):
