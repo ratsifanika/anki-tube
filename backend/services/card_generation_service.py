@@ -97,16 +97,17 @@ class CardGenerationService:
         ))
         return cards
 
-    def generate_random_cards(count: int, collection_id: int = None) -> List[AnkiCard]:
+    def generate_random_cards(self, card_count: int, collection_id: int = None) -> List[AnkiCard]:
         """
         Génère une liste de cartes AnkiCard pour les tests ou le peuplement initial.
-        
+
         :param count: Nombre de cartes à générer
         :param collection_id: ID de collection à affecter à toutes les cartes (optionnel)
-        :return: Liste d'instances de AnkiCard
+        :return: Liste d'instances de AnkiCard<
         """
         cards = []
-        for i in range(count):
+        print(f"Generating {card_count} random cards...")
+        for i in range(card_count):
             front = f"Question {i+1}"
             back = f"Réponse {i+1}"
             tags = [f"tag{i%3}", f"theme{i%2}"]

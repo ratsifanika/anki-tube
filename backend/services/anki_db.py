@@ -39,4 +39,4 @@ async def save_cards_to_db(
         db.add(card)
 
     await db.commit()
-    return collection.id
+    return collection.uuid

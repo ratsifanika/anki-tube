@@ -8,14 +8,16 @@ from schemas.anki import AnkiCardSchema
 from pydantic import BaseModel
 import datetime
 from database import Base
-
+import uuid
 class Collection(Base):
     __tablename__ = "collections"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    uuid = Column(String(36), unique=True, default=lambda: str(uuid.uuid4()))
     video_id = Column(String(255), nullable=False)
     video_title = Column(String(255), nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.now(),nullable=False)
+    updated_at = Column(DateTime, default=datetime.datetime.now(), onupdate=datetime.datetime.now(),nullable=False)
 
     # Clé étrangère vers User
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
@@ -49,7 +51,7 @@ class AnkiCard(Base):
     @tags.setter
     def tags(self, value: List[str]):
         self.tags_json = json.dumps(value)
-    
+
     def __str__(self):
         """
         Cette méthode définit la représentation textuelle de l'objet.
@@ -71,6 +73,4 @@ class CardGenerationRequest(SQLModel):
 
 
 class CardGenerationResponse(BaseModel):
-    cards: List[AnkiCardSchema]
-    video_title: str
-    generation_time: float
+    collection_uuid: str

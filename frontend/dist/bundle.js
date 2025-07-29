@@ -2690,7 +2690,7 @@ let NewCollection = class NewCollection extends i {
                 window.location.href = '/collection/' + collectionId; // Redirect to the new collection
             }
             else {
-                this.error = "(${response.status})Erreur lors de la création de la collection. Veuillez réessayer.";
+                this.error = "Erreur lors de la création de la collection. Veuillez réessayer.";
             }
         }
         catch (error) {
@@ -2826,15 +2826,16 @@ class Card {
 }
 
 class Collection {
-    constructor(id, name, cards = [], createdAt, updatedAt) {
+    constructor(id, uuid, name, cards = [], createdAt, updatedAt) {
         this.id = id;
+        this.uuid = uuid;
         this.name = name;
         this.cards = cards;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
     static fromJSON(json) {
-        return new Collection(json.id, json.name, json.cards ? json.cards.map((card) => Card.fromJSON(card)) : [], new Date(json.createdAt), new Date(json.updatedAt));
+        return new Collection(json.id, json.uuid, json.video_title, json.cards ? json.cards.map((card) => Card.fromJSON(card)) : [], new Date(json.createdAt), new Date(json.updatedAt));
     }
     randomCard() {
         if (this.cards.length === 0) {
@@ -2880,7 +2881,7 @@ let CurrentCollection = class CurrentCollection extends i {
             console.log('Data fetched:', data);
             this.collectionData = Collection.fromJSON(data);
             console.log('Collection data fetched:', this.collectionData);
-            this.currentCard = this.collectionData.randomCard();
+            this.currentCard = await this.getRandomCard();
         }
         catch (error) {
             console.error('Error fetching collection data:', error);
@@ -2888,6 +2889,15 @@ let CurrentCollection = class CurrentCollection extends i {
         finally {
             this.isLoading = false;
         }
+    }
+    async getRandomCard() {
+        const response = await fetch(`${API_BASE_URL}/api/collection/${this.collectionData?.id}/random`);
+        if (!response.ok) {
+            console.error('Failed to fetch random card:', response.statusText);
+            return null;
+        }
+        const data = await response.json();
+        return Card.fromJSON(data);
     }
     render() {
         return x `

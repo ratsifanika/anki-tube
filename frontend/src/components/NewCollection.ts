@@ -81,7 +81,7 @@ export class NewCollection extends LitElement {
             window.location.href = '/collection/' + collectionId; // Redirect to the new collection
 
         } else {
-            this.error = "(${response.status})Erreur lors de la création de la collection. Veuillez réessayer.";
+            this.error = "Erreur lors de la création de la collection. Veuillez réessayer.";
         }
 
     } catch (error) {

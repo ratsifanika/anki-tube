@@ -2,7 +2,8 @@ import { Card } from './Card';
 
 export class Collection {
   constructor(
-    public id: string,
+    public id: number,
+    public uuid: string,
     public name: string,
     public cards: Card[] = [],
     public createdAt: Date,
@@ -13,7 +14,8 @@ export class Collection {
   static fromJSON(json: any): Collection {
     return new Collection(
       json.id,
-      json.name,
+      json.uuid,
+      json.video_title,
       json.cards ? json.cards.map((card: any) => Card.fromJSON(card)) : [],
       new Date(json.createdAt),
       new Date(json.updatedAt)

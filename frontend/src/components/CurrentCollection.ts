@@ -248,7 +248,7 @@ export class CurrentCollection extends LitElement {
       console.log('Data fetched:', data);
       this.collectionData = Collection.fromJSON(data);
       console.log('Collection data fetched:', this.collectionData);
-      this.currentCard = this.collectionData.randomCard();
+      this.currentCard = await this.getRandomCard();
     } catch (error) {
       console.error('Error fetching collection data:', error);
     } finally
@@ -256,6 +256,16 @@ export class CurrentCollection extends LitElement {
       this.isLoading = false;
     }
   }
+  private async getRandomCard(): Promise<Card| null> {
+    const response = await fetch(`${API_BASE_URL}/api/collection/${this.collectionData?.id}/random`);
+    if (!response.ok) {
+      console.error('Failed to fetch random card:', response.statusText);
+      return null;
+    }
+    const data = await response.json();
+    return Card.fromJSON(data);
+  }
+
   render() {
     return html`
       <div class="container">
