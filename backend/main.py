@@ -26,7 +26,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 from services.anki_db import save_cards_to_db
 from sqlalchemy.future import select
-from schemas.anki import CollectionRead
+from schemas.anki import CollectionRead, AnswerEvaluationResponse, CardGenerationResponse, CardGenerationRequest, AnwserEvaluationRequest
 from sqlalchemy import select, func, literal_column
 from models.anki import AnkiCard
 # from models.init_relations import init_models
@@ -203,8 +203,31 @@ async def get_random_card(collection_id: str, db: AsyncSession = Depends(get_asy
 
     if card is None:
         raise HTTPException(status_code=404, detail="No card found for this collection.")
+    # Marquer la carte comme vue
+    card.seen += 1
+    await db.commit()
 
     return card
+
+@app.post("api/card/evaluate-answer", response=AnswerEvaluationResponse)
+async def answer_card(request = AnwserEvaluationRequest, db: AsyncSession = Depends(get_async_session)):
+    """Enregistre la réponse à une carte Anki"""
+    stmt = select(AnkiCard).where(AnkiCard.id == request.card_id)
+    result = await db.execute(stmt)
+    card = result.scalar_one_or_none()
+
+    if card is None:
+        raise HTTPException(status_code=404, detail="Card not found")
+
+    # Incrémenter le compteur de réponses correctes
+    answerd_correctly = True#TODO: Implement actual answer checking logic
+    card.answered_correctly += 1 if answerd_correctly else 0
+    await db.commit()
+
+    return AnswerEvaluationResponse(
+        card_id=card.id,
+        correct=answerd_correctly
+    )
 
 if __name__ == "__main__":
     import uvicorn

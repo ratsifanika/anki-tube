@@ -22,3 +22,11 @@ class CollectionRead(BaseModel):
 
     class Config:
         orm_mode = True
+
+class AnswerEvaluationResponse(BaseModel):
+    card_id: int
+    correct: bool
+
+class AnwserEvaluationRequest(BaseModel):
+    card_id: int
+    answer: str
