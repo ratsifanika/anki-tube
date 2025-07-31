@@ -59,18 +59,3 @@ class AnkiCard(Base):
         """
         return f"AnkiCard(front='{self.front}', back='{self.back}')"
 
-
-class AnkiExportRequest(BaseModel):
-    cards: List[AnkiCardSchema]
-    deck_name: str = "AnkiTube Cards"
-
-
-class CardGenerationRequest(SQLModel):
-    video_url: str
-    difficulty: str = "intermediaire"
-    card_count: int = 10
-    language: str = "fr"
-
-
-class CardGenerationResponse(BaseModel):
-    collection_uuid: str

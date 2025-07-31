@@ -2899,6 +2899,27 @@ let CurrentCollection = class CurrentCollection extends i {
         const data = await response.json();
         return Card.fromJSON(data);
     }
+    async validateresponse() {
+        const userAnswer = this.shadowRoot?.getElementById('user-answer')?.value;
+        if (!userAnswer || !this.currentCard) {
+            alert('Veuillez entrer une réponse avant de valider.');
+            return;
+        }
+        const response = await fetch(`${API_BASE_URL}/api/card/evaluate-answer`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                card_id: this.currentCard.id,
+                user_answer: userAnswer,
+            }),
+        });
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        await response.json();
+    }
     render() {
         return x `
       <div class="container">

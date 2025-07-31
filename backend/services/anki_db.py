@@ -7,14 +7,6 @@ from models.anki import AnkiCard, Collection
 from users import User
 from sqlalchemy import select
 
-async def get_anonymous(db: AsyncSession) -> User:
-    result = await db.execute(
-        select(User).where(User.email == "anonymous@anonymous.com")
-    )
-    user = result.scalar_one_or_none()
-    if not user:
-        raise HTTPException(status_code=500, detail="Utilisateur 'anonymous' introuvable")
-    return user
 
 async def save_cards_to_db(
         db: AsyncSession,
@@ -23,12 +15,11 @@ async def save_cards_to_db(
         video_title: str,
         current_user: Optional[User] = None
     ) -> int:
-    user = current_user or await get_anonymous(db)
 
     collection = Collection(
         video_id=video_id,
         video_title=video_title,
-        user_id=user.id,
+        user_id=current_user.id,
         created_at=datetime.utcnow()
     )
     db.add(collection)

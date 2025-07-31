@@ -266,6 +266,29 @@ export class CurrentCollection extends LitElement {
     return Card.fromJSON(data);
   }
 
+  private async validateresponse() {
+    const userAnswer = (this.shadowRoot?.getElementById('user-answer') as HTMLTextAreaElement)?.value;
+    if (!userAnswer || !this.currentCard) {
+      alert('Veuillez entrer une réponse avant de valider.');
+      return;
+    }
+    const response = await fetch(`${API_BASE_URL}/api/card/evaluate-answer`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        card_id: this.currentCard.id,
+        user_answer: userAnswer,
+      }),
+    });
+    if (!response.ok) {
+        throw new Error('Network response was not ok');
+    }
+    const data = await response.json();
+
+  }
+
   render() {
     return html`
       <div class="container">

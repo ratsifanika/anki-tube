@@ -30,3 +30,19 @@ class AnswerEvaluationResponse(BaseModel):
 class AnwserEvaluationRequest(BaseModel):
     card_id: int
     answer: str
+
+
+class AnkiExportRequest(BaseModel):
+    cards: List[AnkiCardSchema]
+    deck_name: str = "AnkiTube Cards"
+
+
+class CardGenerationRequest(BaseModel):
+    video_url: str
+    difficulty: str = "intermediaire"
+    card_count: int = 10
+    language: str = "fr"
+
+
+class CardGenerationResponse(BaseModel):
+    collection_uuid: str

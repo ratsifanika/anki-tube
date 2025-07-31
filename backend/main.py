@@ -8,7 +8,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 from pathlib import Path
 # import pydantic models
-from models.anki import CardGenerationResponse, AnkiExportRequest, CardGenerationRequest, Collection
+from models.anki import Collection
 # import transcription service
 from services.transcription_service import TranscriptionService
 # import card generation service
@@ -16,7 +16,7 @@ from services.card_generation_service import CardGenerationService
 # import Anki exporter service
 from services.anki_exporter import AnkiExporter
 
-from auth import auth_backend, fastapi_users, current_active_user_optional
+from auth import auth_backend, fastapi_users, current_active_user
 from users import User, UserCreate, UserRead, UserUpdate
 from database import Base, engine
 
@@ -26,7 +26,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 from services.anki_db import save_cards_to_db
 from sqlalchemy.future import select
-from schemas.anki import CollectionRead, AnswerEvaluationResponse, CardGenerationResponse, CardGenerationRequest, AnwserEvaluationRequest
+from schemas.anki import CollectionRead, AnswerEvaluationResponse, CardGenerationRequest,CardGenerationResponse, AnwserEvaluationRequest, AnkiExportRequest
 from sqlalchemy import select, func, literal_column
 from models.anki import AnkiCard
 # from models.init_relations import init_models
@@ -100,7 +100,7 @@ async def root():
 @app.post("/api/generate-cards", response_model=CardGenerationResponse)
 async def generate_cards(request: CardGenerationRequest,
                          db: AsyncSession = Depends(get_async_session),
-                         user: Optional[User] = Depends(current_active_user_optional)):
+                         user: Optional[User] = Depends(current_active_user)):
     """Génère des cartes Anki à partir d'une vidéo YouTube"""
 
     import time
@@ -209,7 +209,7 @@ async def get_random_card(collection_id: str, db: AsyncSession = Depends(get_asy
 
     return card
 
-@app.post("api/card/evaluate-answer", response=AnswerEvaluationResponse)
+@app.post("api/card/evaluate-answer", response_model=AnswerEvaluationResponse)
 async def answer_card(request = AnwserEvaluationRequest, db: AsyncSession = Depends(get_async_session)):
     """Enregistre la réponse à une carte Anki"""
     stmt = select(AnkiCard).where(AnkiCard.id == request.card_id)
