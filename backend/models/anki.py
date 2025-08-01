@@ -37,6 +37,8 @@ class AnkiCard(Base):
     seen = Column(Integer, default=0, nullable=True)
     answered_correctly = Column(Integer, default=0, nullable=False)
     updated_at = Column(DateTime, default=datetime.datetime.now(), onupdate=datetime.datetime.now(),nullable=False)
+    last_given_answer = Column(String(255), nullable=True)
+    next_review_at = Column(DateTime, nullable=True, default=datetime.datetime.now())
 
     # Clé étrangère vers Collection
     collection_id = Column(Integer, ForeignKey("collections.id", ondelete="CASCADE"), nullable=True)

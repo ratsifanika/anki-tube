@@ -26,7 +26,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 from services.anki_db import save_cards_to_db
 from sqlalchemy.future import select
-from schemas.anki import CollectionRead, AnswerEvaluationResponse, CardGenerationRequest,CardGenerationResponse, AnwserEvaluationRequest, AnkiExportRequest
+from schemas.anki import CollectionRead, AnswerEvaluationResponse, CardGenerationRequest,CardGenerationResponse, AnswerEvaluationRequest, AnkiExportRequest
 from sqlalchemy import select, func, literal_column
 from models.anki import AnkiCard
 # from models.init_relations import init_models
@@ -209,24 +209,27 @@ async def get_random_card(collection_id: str, db: AsyncSession = Depends(get_asy
 
     return card
 
-@app.post("api/card/evaluate-answer", response_model=AnswerEvaluationResponse)
-async def answer_card(request = AnwserEvaluationRequest, db: AsyncSession = Depends(get_async_session)):
+@app.post("/api/card/evaluate-answer", response_model=AnswerEvaluationResponse)
+async def evaluate_answer(request: AnswerEvaluationRequest, db: AsyncSession = Depends(get_async_session)):
     """Enregistre la réponse à une carte Anki"""
     stmt = select(AnkiCard).where(AnkiCard.id == request.card_id)
     result = await db.execute(stmt)
     card = result.scalar_one_or_none()
-
+    print(f"Evaluating answer for card ID: {card}")
     if card is None:
         raise HTTPException(status_code=404, detail="Card not found")
 
     # Incrémenter le compteur de réponses correctes
     answerd_correctly = True#TODO: Implement actual answer checking logic
+    comment = "Your answer is correct!" if answerd_correctly else "Your answer is incorrect."#TODO: Implement actual comment logic
     card.answered_correctly += 1 if answerd_correctly else 0
+    card.last_given_answer = request.answer
     await db.commit()
 
     return AnswerEvaluationResponse(
         card_id=card.id,
-        correct=answerd_correctly
+        correct=answerd_correctly,
+        comment=comment
     )
 
 if __name__ == "__main__":

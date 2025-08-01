@@ -26,8 +26,9 @@ class CollectionRead(BaseModel):
 class AnswerEvaluationResponse(BaseModel):
     card_id: int
     correct: bool
+    comment: str
 
-class AnwserEvaluationRequest(BaseModel):
+class AnswerEvaluationRequest(BaseModel):
     card_id: int
     answer: str
 

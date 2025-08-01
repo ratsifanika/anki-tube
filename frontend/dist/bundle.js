@@ -2814,7 +2814,7 @@ class Card {
         this.updatedAt = updatedAt;
     }
     static fromJSON(json) {
-        return new Card(json.id, json.front, json.back, json.difficulty || 1, json.numberOfViews || 0, json.numberOfGoodAnswers || 0, json.tags || [], new Date(json.createdAt), new Date(json.updatedAt));
+        return new Card(json.id, json.front, json.back, json.difficulty || 1, json.seen || 0, json.answered_correctly || 0, json.tags || [], new Date(json.createdAt), new Date(json.updatedAt));
     }
     // Method to update the card's content
     update(front, back, tags = []) {
@@ -2846,6 +2846,17 @@ class Collection {
     }
 }
 
+class CardEvaluation {
+    constructor(cardId, correct, comment = '') {
+        this.cardId = cardId;
+        this.correct = correct;
+        this.comment = comment;
+    }
+    static fromJSON(json) {
+        return new CardEvaluation(json.cardId, json.correct, json.comment || '');
+    }
+}
+
 let CurrentCollection = class CurrentCollection extends i {
     constructor() {
         super(...arguments);
@@ -2853,9 +2864,13 @@ let CurrentCollection = class CurrentCollection extends i {
         this.collectionData = null;
         this.isLoading = true;
         this.currentCard = null;
+        this.lastCardEvaluation = null;
+        this.userAnswer = '';
+        //TODO: replace with a class that represent fetched stats from the API
         this.totalCards = 10;
         this.openedCards = 5;
         this.correctAnswers = 3;
+        this.isModalOpen = false;
     }
     onBeforeEnter(location) {
         this.collectionId = location.params.id;
@@ -2891,18 +2906,19 @@ let CurrentCollection = class CurrentCollection extends i {
         }
     }
     async getRandomCard() {
+        this.lastCardEvaluation = null;
         const response = await fetch(`${API_BASE_URL}/api/collection/${this.collectionData?.id}/random`);
         if (!response.ok) {
             console.error('Failed to fetch random card:', response.statusText);
             return null;
         }
         const data = await response.json();
+        console.log('Random card data:', data);
         return Card.fromJSON(data);
     }
-    async validateresponse() {
-        const userAnswer = this.shadowRoot?.getElementById('user-answer')?.value;
-        if (!userAnswer || !this.currentCard) {
-            alert('Veuillez entrer une réponse avant de valider.');
+    async validateResponse() {
+        if (!this.userAnswer || !this.currentCard) {
+            alert('Veuillez entrer une réponse avant de valider!');
             return;
         }
         const response = await fetch(`${API_BASE_URL}/api/card/evaluate-answer`, {
@@ -2912,13 +2928,18 @@ let CurrentCollection = class CurrentCollection extends i {
             },
             body: JSON.stringify({
                 card_id: this.currentCard.id,
-                user_answer: userAnswer,
+                answer: this.userAnswer,
             }),
         });
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
-        await response.json();
+        const data = await response.json();
+        this.lastCardEvaluation = CardEvaluation.fromJSON(data);
+        this.userAnswer = '';
+    }
+    closeModal() {
+        this.isModalOpen = false;
     }
     render() {
         return x `
@@ -2964,30 +2985,51 @@ let CurrentCollection = class CurrentCollection extends i {
         </div>
 
         <!-- Zone de réponse -->
-        <div class="answer-section">
+        <div class="answer-section" ?hidden="${this.lastCardEvaluation !== null}">
           <h3>Votre réponse</h3>
-          <textarea id="user-answer" placeholder="Tapez votre réponse ici..."></textarea>
+          <textarea id="user-answer"
+          placeholder="Tapez votre réponse ici..." .value="${this.userAnswer}"
+          @input="${(e) => {
+            const target = e.target;
+            this.userAnswer = target.value;
+        }}"
+          ></textarea>
           <div class="button-group">
-            <button class="btn-primary" @click="${() => { }}">
+            <button class="btn-primary" @click="${this.validateResponse}">
               Valider la Réponse
             </button>
-            <button class="btn-secondary" @click="${() => { }}">
+            <button class="btn-secondary" @click="${() => { this.isModalOpen = true; console.log('modal show'); }}">
               Voir la Réponse
             </button>
           </div>
         </div>
+        <div class="evaluation-section" ?hidden="${this.lastCardEvaluation === null}">
+          <h3>Évaluation de la Carte</h3>
+          <p>Correct: ${this.lastCardEvaluation?.correct ? 'Oui' : 'Non'}</p>
+          <p>Commentaire: ${this.lastCardEvaluation?.comment || 'Aucun commentaire'}</p>
+        </div>
 
         <!-- Bouton carte suivante -->
         <div class="button-group">
-          <button class="btn-next" @click="${() => {
-            if (this.collectionData) {
-                this.currentCard = this.collectionData.randomCard();
-            }
+          <button class="btn-next" @click="${async () => {
+            this.currentCard = await this.getRandomCard();
         }}">
-            Carte Suivante
-          </button>
+              Carte suivante
+            </button>
         </div>
       </div>
+
+      ${this.isModalOpen
+            ? x `
+            <div class="modal-overlay" @click="${this.closeModal}">
+              <div class="modal-content" @click="${(e) => e.stopPropagation()}">
+                <button class="close-button" @click="${this.closeModal}">&times;</button>
+                <h3>Réponse de la carte</h3>
+                <p>${this.currentCard?.back}</p>
+              </div>
+            </div>
+          `
+            : ''}
     `;
     }
 };
@@ -3195,6 +3237,44 @@ CurrentCollection.styles = [
           transform: translateY(-2px);
           box-shadow: 0 6px 20px rgba(231, 76, 60, 0.3);
         }
+
+        /* Styles pour la modale */
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-color: rgba(0, 0, 0, 0.5);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 1000;
+        }
+
+        .modal-content {
+          background-color: white;
+          padding: 25px;
+          border-radius: 8px;
+          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+          max-width: 90%;
+          min-width: 300px;
+          position: relative;
+        }
+        .close-button {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          background: none;
+          border: none;
+          font-size: 1.5rem;
+          cursor: pointer;
+          color: #aaa;
+        }
+
+        .close-button:hover {
+          color: #333;
+        }
     `
 ];
 __decorate([
@@ -3209,6 +3289,15 @@ __decorate([
 __decorate([
     r()
 ], CurrentCollection.prototype, "currentCard", void 0);
+__decorate([
+    r()
+], CurrentCollection.prototype, "lastCardEvaluation", void 0);
+__decorate([
+    r()
+], CurrentCollection.prototype, "userAnswer", void 0);
+__decorate([
+    r()
+], CurrentCollection.prototype, "isModalOpen", void 0);
 CurrentCollection = __decorate([
     t('current-collection')
 ], CurrentCollection);

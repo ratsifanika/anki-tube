@@ -1,6 +1,6 @@
 export class Card {
   constructor(
-    public id: string,
+    public id: number,
     public front: string,
     public back: string,
     public difficulty: number = 1,
@@ -17,8 +17,8 @@ export class Card {
       json.front,
       json.back,
       json.difficulty || 1,
-      json.numberOfViews || 0,
-      json.numberOfGoodAnswers || 0,
+      json.seen || 0,
+      json.answered_correctly || 0,
       json.tags || [],
       new Date(json.createdAt),
       new Date(json.updatedAt)

@@ -4,6 +4,7 @@ import { API_BASE_URL } from "../config/api";
 import { Collection } from "../models/Collection";
 import { Card } from "../models/Card";
 import { RouterLocation } from '@vaadin/router';
+import { CardEvaluation } from "../models/CardEvaluation";
 @customElement('current-collection')
 export class CurrentCollection extends LitElement {
 
@@ -211,6 +212,44 @@ export class CurrentCollection extends LitElement {
           transform: translateY(-2px);
           box-shadow: 0 6px 20px rgba(231, 76, 60, 0.3);
         }
+
+        /* Styles pour la modale */
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-color: rgba(0, 0, 0, 0.5);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 1000;
+        }
+
+        .modal-content {
+          background-color: white;
+          padding: 25px;
+          border-radius: 8px;
+          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+          max-width: 90%;
+          min-width: 300px;
+          position: relative;
+        }
+        .close-button {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          background: none;
+          border: none;
+          font-size: 1.5rem;
+          cursor: pointer;
+          color: #aaa;
+        }
+
+        .close-button:hover {
+          color: #333;
+        }
     `
   ];
 
@@ -218,9 +257,14 @@ export class CurrentCollection extends LitElement {
   @state() collectionData:Collection|null = null;
   @state() isLoading: boolean = true;
   @state() currentCard: Card | null = null;
+  @state() lastCardEvaluation: CardEvaluation | null = null;
+  @state() userAnswer: string = '';
+  //TODO: replace with a class that represent fetched stats from the API
   totalCards:number = 10;
   openedCards:number = 5;
   correctAnswers:number = 3;
+  @state() isModalOpen: boolean = false;
+
 
   onBeforeEnter(location: RouterLocation) {
     this.collectionId = location.params.id as string;
@@ -257,21 +301,23 @@ export class CurrentCollection extends LitElement {
     }
   }
   private async getRandomCard(): Promise<Card| null> {
+    this.lastCardEvaluation = null;
     const response = await fetch(`${API_BASE_URL}/api/collection/${this.collectionData?.id}/random`);
     if (!response.ok) {
       console.error('Failed to fetch random card:', response.statusText);
       return null;
     }
     const data = await response.json();
+    console.log('Random card data:', data);
     return Card.fromJSON(data);
   }
 
-  private async validateresponse() {
-    const userAnswer = (this.shadowRoot?.getElementById('user-answer') as HTMLTextAreaElement)?.value;
-    if (!userAnswer || !this.currentCard) {
-      alert('Veuillez entrer une réponse avant de valider.');
+  private async validateResponse() {
+    if (!this.userAnswer || !this.currentCard) {
+      alert('Veuillez entrer une réponse avant de valider!');
       return;
     }
+
     const response = await fetch(`${API_BASE_URL}/api/card/evaluate-answer`, {
       method: 'POST',
       headers: {
@@ -279,14 +325,19 @@ export class CurrentCollection extends LitElement {
       },
       body: JSON.stringify({
         card_id: this.currentCard.id,
-        user_answer: userAnswer,
+        answer: this.userAnswer,
       }),
     });
     if (!response.ok) {
         throw new Error('Network response was not ok');
     }
     const data = await response.json();
+    this.lastCardEvaluation = CardEvaluation.fromJSON(data);
+    this.userAnswer = '';
+  }
 
+  private closeModal() {
+    this.isModalOpen = false;
   }
 
   render() {
@@ -334,30 +385,52 @@ export class CurrentCollection extends LitElement {
         </div>
 
         <!-- Zone de réponse -->
-        <div class="answer-section">
+        <div class="answer-section" ?hidden="${this.lastCardEvaluation !== null}">
           <h3>Votre réponse</h3>
-          <textarea id="user-answer" placeholder="Tapez votre réponse ici..."></textarea>
+          <textarea id="user-answer"
+          placeholder="Tapez votre réponse ici..." .value="${this.userAnswer}"
+          @input="${(e: Event) => {
+            const target = e.target as HTMLTextAreaElement;
+            this.userAnswer = target.value;
+           }
+          }"
+          ></textarea>
           <div class="button-group">
-            <button class="btn-primary" @click="${() => { /* handle respond action here */ }}">
+            <button class="btn-primary" @click="${this.validateResponse}">
               Valider la Réponse
             </button>
-            <button class="btn-secondary" @click="${() => { /* handle show answer action here */ }}">
+            <button class="btn-secondary" @click="${() => {this.isModalOpen = true; console.log('modal show');} }">
               Voir la Réponse
             </button>
           </div>
         </div>
+        <div class="evaluation-section" ?hidden="${this.lastCardEvaluation === null}">
+          <h3>Évaluation de la Carte</h3>
+          <p>Correct: ${this.lastCardEvaluation?.correct ? 'Oui' : 'Non'}</p>
+          <p>Commentaire: ${this.lastCardEvaluation?.comment || 'Aucun commentaire'}</p>
+        </div>
 
         <!-- Bouton carte suivante -->
         <div class="button-group">
-          <button class="btn-next" @click="${() => {
-            if (this.collectionData) {
-              this.currentCard = this.collectionData.randomCard();
-            }
-          }}">
-            Carte Suivante
-          </button>
+          <button class="btn-next" @click="${async () => {
+              this.currentCard = await this.getRandomCard();
+            }}">
+              Carte suivante
+            </button>
         </div>
       </div>
+
+      ${this.isModalOpen
+        ? html`
+            <div class="modal-overlay" @click="${this.closeModal}">
+              <div class="modal-content" @click="${(e: Event) => e.stopPropagation()}">
+                <button class="close-button" @click="${this.closeModal}">&times;</button>
+                <h3>Réponse de la carte</h3>
+                <p>${this.currentCard?.back}</p>
+              </div>
+            </div>
+          `
+        : ''}
     `;
   }
 }
