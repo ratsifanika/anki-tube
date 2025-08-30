@@ -76,8 +76,9 @@ export class NewCollection extends LitElement {
         if (response.status === 200) {
             // The backend returns a collection ID
             const collectionId = response.collectionId;
-            const currentCollection = document.createElement('current-collection') as CurrentCollection;
-            currentCollection.collectionId = collectionId;
+            console.log("Collection créée avec l'ID:", collectionId);
+            // const currentCollection = document.createElement('current-collection') as CurrentCollection;
+            // currentCollection.collectionId = collectionId;
             window.location.href = '/collection/' + collectionId; // Redirect to the new collection
 
         } else {
@@ -93,10 +94,12 @@ export class NewCollection extends LitElement {
 
    async _callBackend(url: string):Promise<{status: number, collectionId: string}>  {
     try {
+      const token = localStorage.getItem('access_token');
       const res = await fetch(`${API_BASE_URL}/api/generate-cards`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+         "Authorization": `Bearer ${token}`
       },
       body: JSON.stringify(
         {
@@ -111,7 +114,7 @@ export class NewCollection extends LitElement {
       return { status: res.status, collectionId: "" };
       }
       const data = await res.json();
-      return { status: res.status, collectionId: data.collectionId };
+      return { status: res.status, collectionId: data.collection_uuid };
       } catch {
         return { status: 500, collectionId: "" };
       }

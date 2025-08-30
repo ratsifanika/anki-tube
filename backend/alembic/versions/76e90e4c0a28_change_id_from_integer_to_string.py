@@ -34,8 +34,9 @@ def upgrade() -> None:
 
     # Étape 3 : Ajouter la contrainte unique et rendre NOT NULL
     op.create_unique_constraint("uq_collections_uuid", "collections", ["uuid"])
-    op.alter_column("collections", "uuid", nullable=False)
-
+    op.alter_column("collections", "uuid", 
+                   existing_type=sa.String(length=36),
+                   nullable=False)
 
 def downgrade() -> None:
     """Downgrade schema."""

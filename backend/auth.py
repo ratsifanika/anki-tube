@@ -42,6 +42,13 @@ class UserManager(BaseUserManager[User, int]):
 
     async def on_after_request_verify(self, user: User, token: str, request=None):
         print(f"Verification requested for user {user.id}. Verification token: {token}")
+        
+    def parse_id(self, value: str) -> int:
+        """Parse l'ID utilisateur depuis le token JWT"""
+        try:
+            return int(value)
+        except ValueError:
+            raise ValueError(f"Invalid user ID: {value}")
 
 # Fonction pour obtenir le gestionnaire d'utilisateurs
 async def get_user_manager(user_db=Depends(get_user_db)):

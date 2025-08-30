@@ -2685,8 +2685,9 @@ let NewCollection = class NewCollection extends i {
             if (response.status === 200) {
                 // The backend returns a collection ID
                 const collectionId = response.collectionId;
-                const currentCollection = document.createElement('current-collection');
-                currentCollection.collectionId = collectionId;
+                console.log("Collection créée avec l'ID:", collectionId);
+                // const currentCollection = document.createElement('current-collection') as CurrentCollection;
+                // currentCollection.collectionId = collectionId;
                 window.location.href = '/collection/' + collectionId; // Redirect to the new collection
             }
             else {
@@ -2702,10 +2703,12 @@ let NewCollection = class NewCollection extends i {
     }
     async _callBackend(url) {
         try {
+            const token = localStorage.getItem('access_token');
             const res = await fetch(`${API_BASE_URL}/api/generate-cards`, {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
                 },
                 body: JSON.stringify({
                     video_url: url,
@@ -2718,7 +2721,7 @@ let NewCollection = class NewCollection extends i {
                 return { status: res.status, collectionId: "" };
             }
             const data = await res.json();
-            return { status: res.status, collectionId: data.collectionId };
+            return { status: res.status, collectionId: data.collection_uuid };
         }
         catch {
             return { status: 500, collectionId: "" };

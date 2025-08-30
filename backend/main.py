@@ -30,6 +30,8 @@ from schemas.anki import CollectionRead, AnswerEvaluationResponse, CardGeneratio
 from sqlalchemy import select, func, literal_column
 from models.anki import AnkiCard
 # from models.init_relations import init_models
+import logging
+import traceback
 
 # Charge les variables d'environnement depuis un fichier .env
 # Assurez-vous que votre fichier .env est dans le même répertoire que main.py
@@ -100,9 +102,9 @@ async def root():
 @app.post("/api/generate-cards", response_model=CardGenerationResponse)
 async def generate_cards(request: CardGenerationRequest,
                          db: AsyncSession = Depends(get_async_session),
-                         user: Optional[User] = Depends(current_active_user)):
+                         user: Optional[User] = Depends(current_active_user)
+                         ):
     """Génère des cartes Anki à partir d'une vidéo YouTube"""
-
     import time
     start_time = time.time()
 
@@ -147,6 +149,15 @@ async def generate_cards(request: CardGenerationRequest,
         return response
 
     except Exception as e:
+        # Afficher la stack trace complète
+        print(f"ERREUR DÉTAILLÉE: {str(e)}")
+        print(f"TYPE D'ERREUR: {type(e).__name__}")
+        print("STACK TRACE:")
+        traceback.print_exc()
+        
+        # Log avec le module logging
+        logging.error(f"Erreur dans generate_cards: {str(e)}", exc_info=True)
+        
         raise HTTPException(status_code=500, detail=f"Erreur lors de la génération: {str(e)}")
 
 @app.post("/api/export-anki")
