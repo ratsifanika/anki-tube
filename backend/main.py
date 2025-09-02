@@ -159,6 +159,16 @@ async def generate_cards(request: CardGenerationRequest,
         logging.error(f"Erreur dans generate_cards: {str(e)}", exc_info=True)
         
         raise HTTPException(status_code=500, detail=f"Erreur lors de la génération: {str(e)}")
+    
+@app.get("/api/collections", response_model=List[CollectionRead])
+async def get_collections(page: int = 1, db: AsyncSession = Depends(get_async_session),
+                          user: User = Depends(current_active_user)
+                          ):
+    """Récupère les collections Anki de l'utilisateur connecté"""
+    stmt = select(Collection).where(Collection.user_id == user.id).order_by(Collection.created_at.desc()).offset((page - 1) * 10).limit(10)
+    result = await db.execute(stmt)
+    collections = result.scalars().all()
+    return collections
 
 @app.post("/api/export-anki")
 async def export_anki(request: AnkiExportRequest):

@@ -3306,22 +3306,68 @@ CurrentCollection = __decorate([
 ], CurrentCollection);
 
 let CollectionList = class CollectionList extends i {
-    // private _selectCollection(collectionId: string) {
-    //     this.dispatchEvent(
-    //         new CustomEvent("collection-selected", {
-    //             detail: { collectionId },
-    //             bubbles: true,
-    //             composed: true,
-    //         })
-    //     );
-    //}
+    constructor() {
+        super(...arguments);
+        this.collections = [];
+        this.loading = false;
+        this.page = 1;
+        this.observer = null;
+    }
+    firstUpdated() {
+        this.loadMore();
+        const sentinel = this.shadowRoot?.querySelector('#sentinel');
+        if (!sentinel) {
+            console.warn('Sentinel element not found');
+            return;
+        }
+        this.observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && !this.loading) {
+                this.loadMore();
+            }
+        });
+        this.observer.observe(sentinel);
+    }
+    disconnectedCallback() {
+        super.disconnectedCallback();
+        this.observer?.disconnect();
+    }
+    async loadMore() {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            console.error('No access token found');
+            return;
+        }
+        this.loading = true; // Éviter les appels multiples
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/collections?page=${this.page}`, {
+                method: "GET",
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                this.collections = [...this.collections, ...data];
+                this.page += 1;
+            }
+            else {
+                console.error("Failed to load more collections", response.status);
+            }
+        }
+        catch (error) {
+            console.error("Network error:", error);
+        }
+        finally {
+            this.loading = false;
+        }
+    }
     render() {
         return x `
-            <ul>
-                <li part="list-item"><a href="/collection/1">Collection 1</a></li>
-                <li part="list-item"><a href="/collection/2">Collection 2</a></li>
-                <li part="list-item"><a href="/collection/3">Collection 3</a></li>
-            </ul>
+         <ul class="container">
+            ${this.collections.map((item) => x `<li part="list-item"><a href="/collection/${item.uuid}">${item.video_title}</a></li>`)}
+            ${this.loading ? x `<div class="loading">Chargement...</div>` : ''}
+            <!-- Élément sentinelle pour détecter le bas -->
+            <div id="sentinel"></div>
         `;
     }
 };
@@ -3354,6 +3400,15 @@ CollectionList.styles = i$3 `
         }
 
         `;
+__decorate([
+    r()
+], CollectionList.prototype, "collections", void 0);
+__decorate([
+    r()
+], CollectionList.prototype, "loading", void 0);
+__decorate([
+    r()
+], CollectionList.prototype, "page", void 0);
 CollectionList = __decorate([
     t('collection-list')
 ], CollectionList);
