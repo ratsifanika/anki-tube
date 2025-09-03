@@ -12,10 +12,13 @@ import os
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL")  # Chemin vers votre fichier SQLite
-# DATABASE_URL=mysql+aiomysql://user:password@host/database
+ENV = os.getenv("ENV", "dev")
+if ENV == "dev":
+    engine = create_async_engine( "mysql+aiomysql://{os.getenv('MYSQL_USER', 'ankitube')}:{os.getenv('MYSQL_PASSWORD', 'ankitube')}"
+    f"@{os.getenv('MYSQL_HOST', 'database')}:{os.getenv('MYSQL_PORT', '3306')}/{os.getenv('MYSQL_DATABASE', 'ankitube')}", echo=False )
+else:
+    engine = create_async_engine( "sqlite:////app/data/app.db", connect_args={"check_same_thread": False} )
 
-engine = create_async_engine(DATABASE_URL)
 
 # Création de la classe de session
 async_session_maker = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)

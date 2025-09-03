@@ -36,3 +36,6 @@ media/
 # Operating system specific files
 .DS_Store
 Thumbs.db
+
+#MP4 generated files
+temp_audio_*

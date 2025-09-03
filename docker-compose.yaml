@@ -8,6 +8,12 @@ services:
       - ./backend:/app
     environment:
       - PYTHONUNBUFFERED=1
+      - ENV=dev
+      - MYSQL_USER=${MYSQL_USER:-ankitube}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-ankitube}
+      - MYSQL_HOST=${MYSQL_HOST:-database}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-ankitube}
     depends_on:
       - database
     #Remove --reload in production
