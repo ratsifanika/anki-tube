@@ -32,6 +32,7 @@ from models.anki import AnkiCard
 # from models.init_relations import init_models
 import logging
 import traceback
+from fastapi.staticfiles import StaticFiles
 
 # Charge les variables d'environnement depuis un fichier .env
 # Assurez-vous que votre fichier .env est dans le même répertoire que main.py
@@ -39,10 +40,22 @@ load_dotenv()
 
 app = FastAPI(title="AnkiTube API", version="1.0.0")
 
+# Monter les fichiers statiques depuis /app/static
+app.mount("/", StaticFiles(directory="/app/static", html=True), name="static")
+
+# Configuration CORS dynamique
+ENV = os.getenv("ENV", "dev")
+if ENV == "prod":
+    # En production, autoriser la même origine (frontend et backend sur le même domaine)
+    allow_origins = ["*"]  # Ou spécifiez l'origine exacte, ex. ["http://<ip-externe>:8000"]
+else:
+    # En développement, autoriser le frontend sur localhost:3000
+    allow_origins = ["http://localhost:3000"]
+
 # Configuration CORS pour permettre les requêtes depuis l'extension Chrome
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=allow_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -95,7 +108,7 @@ app.include_router(
 # init_models()
 
 # Routes API
-@app.get("/")
+@app.get("/api")
 async def root():
     return {"message": "AnkiTube API is running"}
 

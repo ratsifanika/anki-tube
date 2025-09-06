@@ -1,0 +1,4 @@
+# Ignorer les fichiers temporaires audio
+backend/temp_audio_*
+frontend/dist/
+frontend/node_modules/

@@ -1,0 +1,31 @@
+services:
+  app:
+    build:
+      context: .
+    ports:
+      - "8030:8000"  # FastAPI exposé sur le port 8020
+    environment:
+      - ENV=prod  # Indique l'environnement de production
+      - MYSQL_USER=ankitube
+      - MYSQL_PASSWORD=ankitube
+      - MYSQL_HOST=database
+      - MYSQL_PORT=3306
+      - MYSQL_DATABASE=ankitube
+    depends_on:
+      - database
+    command: ["sh", "-c", "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000"]
+
+  database:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: ankitube
+      MYSQL_PASSWORD: ankitube
+      MYSQL_DATABASE: ankitube
+    volumes:
+      - mysql_data:/var/lib/mysql
+    # ports:
+    #   - "3306:3306"  # Exposé pour tests locaux, peut être supprimé en prod si pas nécessaire
+
+volumes:
+  mysql_data:

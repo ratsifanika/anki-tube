@@ -12,12 +12,9 @@ import os
 
 load_dotenv()
 
-ENV = os.getenv("ENV", "dev")
-if ENV == "dev":
-    engine = create_async_engine( "mysql+aiomysql://{os.getenv('MYSQL_USER', 'ankitube')}:{os.getenv('MYSQL_PASSWORD', 'ankitube')}"
+engine = create_async_engine( "mysql+aiomysql://{os.getenv('MYSQL_USER', 'ankitube')}:{os.getenv('MYSQL_PASSWORD', 'ankitube')}"
     f"@{os.getenv('MYSQL_HOST', 'database')}:{os.getenv('MYSQL_PORT', '3306')}/{os.getenv('MYSQL_DATABASE', 'ankitube')}", echo=False )
-else:
-    engine = create_async_engine( "sqlite:////app/data/app.db", connect_args={"check_same_thread": False} )
+
 
 
 # Création de la classe de session

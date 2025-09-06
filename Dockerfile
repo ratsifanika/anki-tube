@@ -2,19 +2,29 @@
 FROM node:24-alpine AS frontend-build
 WORKDIR /app/frontend
 COPY ./frontend/package*.json ./
+COPY ./frontend/index.html ./dist/
 RUN npm install
 COPY ./frontend ./
 RUN npm run build 
 
 # Stage 2: Backend avec SQLite
 FROM python:3.13-slim-bookworm
+
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y git ffmpeg && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Installer le gestionnaire de paquets uv
+RUN pip install uv
+
 WORKDIR /app
 COPY ./backend/requirements.txt ./
-RUN pip install -r requirements.txt
-RUN pip install alembic  # Si pas déjà dans requirements
+RUN uv pip install --system --no-cache-dir -r requirements.txt
 COPY ./backend ./
 # Copie frontend build
 COPY --from=frontend-build /app/frontend/dist ./static
 # Crée dossier pour SQLite
-RUN mkdir -p /app/data
+# RUN mkdir -p /app/data
 CMD ["sh", "-c", "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000"]

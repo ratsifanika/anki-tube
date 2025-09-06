@@ -42,7 +42,7 @@ export default {
     //   historyApiFallback: true, // <--important pour le routing SPA
     //   port: 3000,
     //   open: true,
-    // })
+    // }),
     !isProduction && livereload('dist'),
     isProduction && terser(),
   ],
