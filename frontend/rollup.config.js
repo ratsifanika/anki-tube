@@ -20,6 +20,7 @@ export default {
   plugins: [
     replace({
       'process.env.NODE_ENV': JSON.stringify(isProduction ? 'production' : 'development'),
+      'import.meta.env.VITE_API_BASE_URL': JSON.stringify(''),
       preventAssignment: true,
     }),
     typescript(),

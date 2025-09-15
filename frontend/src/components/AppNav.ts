@@ -165,7 +165,7 @@ export class AppNav extends LitElement {
     render() {
         return html`
             <nav @click=${this._handleClick}>
-                <a href="/" class="logo">MonApp</a>
+                <a href="/" class="logo">Anki-Tube</a>
 
                 <div class="nav-links">
                     <a href="/">Accueil</a>

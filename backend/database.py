@@ -12,7 +12,7 @@ import os
 
 load_dotenv()
 
-engine = create_async_engine( "mysql+aiomysql://{os.getenv('MYSQL_USER', 'ankitube')}:{os.getenv('MYSQL_PASSWORD', 'ankitube')}"
+engine = create_async_engine( f"mysql+aiomysql://{os.getenv('MYSQL_USER', 'ankitube')}:{os.getenv('MYSQL_PASSWORD', 'ankitube')}"
     f"@{os.getenv('MYSQL_HOST', 'database')}:{os.getenv('MYSQL_PORT', '3306')}/{os.getenv('MYSQL_DATABASE', 'ankitube')}", echo=False )
 
 

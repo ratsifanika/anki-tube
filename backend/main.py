@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 import os
@@ -40,26 +40,20 @@ load_dotenv()
 
 app = FastAPI(title="AnkiTube API", version="1.0.0")
 
-# Monter les fichiers statiques depuis /app/static
-app.mount("/", StaticFiles(directory="/app/static", html=True), name="static")
 
 # Configuration CORS dynamique
 ENV = os.getenv("ENV", "dev")
-if ENV == "prod":
-    # En production, autoriser la même origine (frontend et backend sur le même domaine)
-    allow_origins = ["*"]  # Ou spécifiez l'origine exacte, ex. ["http://<ip-externe>:8000"]
-else:
+if ENV != "prod":
     # En développement, autoriser le frontend sur localhost:3000
     allow_origins = ["http://localhost:3000"]
-
-# Configuration CORS pour permettre les requêtes depuis l'extension Chrome
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=allow_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+    # Configuration CORS pour permettre les requêtes depuis l'extension Chrome
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=allow_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 # Configuration OpenAI
 openai.api_key = os.getenv("LLM_API_KEY")
@@ -265,6 +259,18 @@ async def evaluate_answer(request: AnswerEvaluationRequest, db: AsyncSession = D
         correct=answerd_correctly,
         comment=comment
     )
+
+# Monter les fichiers statiques depuis /app/static
+app.mount("/assets", StaticFiles(directory="/app/static", html=True), name="static")
+# Route catch-all pour servir l'index.html pour toutes les routes non-API
+@app.get("/{full_path:path}")
+async def serve_spa(request: Request, full_path: str):
+    # Si c'est une route API, laisser FastAPI gérer normalement
+    if full_path.startswith("api/") or full_path.startswith("auth/") or full_path.startswith("users/"):
+        return {"error": "Route not found"}
+    
+    # Sinon, servir l'index.html pour le routage côté client
+    return FileResponse("/app/static/index.html")
 
 if __name__ == "__main__":
     import uvicorn
