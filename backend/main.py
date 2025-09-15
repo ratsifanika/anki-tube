@@ -260,17 +260,40 @@ async def evaluate_answer(request: AnswerEvaluationRequest, db: AsyncSession = D
         comment=comment
     )
 
-# Monter les fichiers statiques depuis /app/static
-app.mount("/assets", StaticFiles(directory="/app/static", html=True), name="static")
-# Route catch-all pour servir l'index.html pour toutes les routes non-API
-@app.get("/{full_path:path}")
-async def serve_spa(request: Request, full_path: str):
-    # Si c'est une route API, laisser FastAPI gérer normalement
-    if full_path.startswith("api/") or full_path.startswith("auth/") or full_path.startswith("users/"):
-        return {"error": "Route not found"}
+
+# Montage conditionnel des fichiers statiques
+static_directory = "/app/static"
+
+# Vérifier si on doit servir les fichiers statiques
+should_serve_static = (
+    ENV == "prod" and 
+    os.path.exists(static_directory) and 
+    os.path.isdir(static_directory)
+)
+
+if should_serve_static:
+    # Servir les assets statiques (JS, CSS, images)
+    app.mount("/assets", StaticFiles(directory=static_directory), name="assets")
     
-    # Sinon, servir l'index.html pour le routage côté client
-    return FileResponse("/app/static/index.html")
+    # Route catch-all pour servir l'index.html pour toutes les routes non-API
+    @app.get("/{full_path:path}")
+    async def serve_spa(request: Request, full_path: str):
+        # Si c'est une route API, laisser FastAPI gérer normalement
+        if (full_path.startswith("api/") or 
+            full_path.startswith("auth/") or 
+            full_path.startswith("users/") or
+            full_path.startswith("docs") or
+            full_path.startswith("redoc") or
+            full_path.startswith("openapi.json")):
+            return {"error": "Route not found"}
+        
+        # Sinon, servir l'index.html pour le routage côté client
+        return FileResponse(f"{static_directory}/index.html")
+
+# En développement, pas de fichiers statiques (frontend servi par Node.js)
+else:
+    print(f"Mode développement détecté (ENV={ENV}). Fichiers statiques non montés.")
+    print("Le frontend doit être servi par le service Node.js séparé.")
 
 if __name__ == "__main__":
     import uvicorn
