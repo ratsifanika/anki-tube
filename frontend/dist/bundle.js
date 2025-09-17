@@ -1,5 +1,5 @@
 
-(function(l, r) { if (!l || l.getElementById('livereloadscript')) return; r = l.createElement('script'); r.async = 1; r.src = '//' + (self.location.host || 'localhost').split(':')[0] + ':35730/livereload.js?snipver=1'; r.id = 'livereloadscript'; l.getElementsByTagName('head')[0].appendChild(r) })(self.document);
+(function(l, r) { if (!l || l.getElementById('livereloadscript')) return; r = l.createElement('script'); r.async = 1; r.src = '//' + (self.location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1'; r.id = 'livereloadscript'; l.getElementsByTagName('head')[0].appendChild(r) })(self.document);
 /******************************************************************************
 Copyright (c) Microsoft Corporation.
 
@@ -2664,8 +2664,15 @@ AppContainer = __decorate([
 ], AppContainer);
 
 // src/config/api.js
-// export const API_BASE_URL:string = 'http://localhost:8030';
-const API_BASE_URL = '';
+const getApiBaseUrl = () => {
+    // En développement, l'API est sur un port différent
+    if (typeof window !== 'undefined' && window.location.hostname === 'localhost' && window.location.port === '3000') {
+        return 'http://localhost:8030';
+    }
+    // En production, l'API est servie par le même serveur
+    return '';
+};
+const API_BASE_URL = getApiBaseUrl();
 
 let NewCollection = class NewCollection extends i {
     constructor() {

@@ -52,8 +52,8 @@ services:
       #need to run the following command to make node_modules available in host:
       #docker compose run --rm frontend sh -c "cp -r node_modules /app-host/"
       - ./frontend/node_modules:/app-host/node_modules
-    command: npm run dev
-    # command: npm run start #pourinitialiser le projet
+    command: ["npm", "run", "dev"]
+    # command: npm run start #pour initialiser le projet
 
 volumes:
   mysql_data:

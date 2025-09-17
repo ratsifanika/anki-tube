@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.init.js",
-    "dev": "ROLLUP_WATCH=true rollup -c -w",
+    "dev": "mkdir -p dist && cp index.dev.html dist/index.html && ROLLUP_WATCH=true rollup -c -w & node serve.js",
     "build": "rollup -c",
     "serve": "node serve.js"
   },
