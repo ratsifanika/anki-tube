@@ -54,6 +54,7 @@ jobs:
               sudo systemctl start docker
               sudo systemctl enable docker
               sudo usermod -aG docker $USER
+              echo "Docker installé, redémarrage de la session nécessaire"
             fi
             
             # Installer Docker Compose si nécessaire
@@ -62,12 +63,27 @@ jobs:
               sudo chmod +x /usr/local/bin/docker-compose
             fi
             
-            # Login à Docker Hub
-            echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+            # S'assurer que l'utilisateur est dans le groupe docker
+            sudo usermod -aG docker $USER
             
-            # Déployer avec Docker Compose
-            docker-compose -f /home/$USER/docker-compose.prod.yaml pull
-            docker-compose -f /home/$USER/docker-compose.prod.yaml up -d
+            # Utiliser sudo pour les commandes Docker si nécessaire
+            # ou utiliser newgrp pour rafraîchir les permissions de groupe
+            if ! docker ps &> /dev/null; then
+              echo "Utilisation de sudo pour Docker car les permissions de groupe ne sont pas encore effectives"
+              # Login à Docker Hub avec sudo
+              echo "${{ secrets.DOCKERHUB_TOKEN }}" | sudo docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+              
+              # Déployer avec Docker Compose avec sudo
+              sudo docker-compose -f /home/$USER/docker-compose.prod.yaml pull
+              sudo docker-compose -f /home/$USER/docker-compose.prod.yaml up -d
+            else
+              # Login à Docker Hub
+              echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+              
+              # Déployer avec Docker Compose
+              docker-compose -f /home/$USER/docker-compose.prod.yaml pull
+              docker-compose -f /home/$USER/docker-compose.prod.yaml up -d
+            fi
           EOF
           
           # Nettoyer
