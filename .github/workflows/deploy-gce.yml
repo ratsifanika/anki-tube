@@ -42,8 +42,8 @@ jobs:
           echo "$SSH_PRIVATE_KEY" > ssh_key
           chmod 600 ssh_key
           
-          # Copier docker-compose.prod.yml sur l'instance GCE
-          scp -o StrictHostKeyChecking=no -i ssh_key docker-compose.prod.yml $SSH_USER@$SSH_HOST:/home/$SSH_USER/docker-compose.prod.yml
+          # Copier docker-compose.prod.yaml sur l'instance GCE
+          scp -o StrictHostKeyChecking=no -i ssh_key docker-compose.prod.yaml $SSH_USER@$SSH_HOST:/home/$SSH_USER/docker-compose.prod.yaml
           
           # Se connecter à l'instance et déployer
           ssh -o StrictHostKeyChecking=no -i ssh_key $SSH_USER@$SSH_HOST << 'EOF'
@@ -66,8 +66,8 @@ jobs:
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
             
             # Déployer avec Docker Compose
-            docker-compose -f /home/$USER/docker-compose.prod.yml pull
-            docker-compose -f /home/$USER/docker-compose.prod.yml up -d
+            docker-compose -f /home/$USER/docker-compose.prod.yaml pull
+            docker-compose -f /home/$USER/docker-compose.prod.yaml up -d
           EOF
           
           # Nettoyer
