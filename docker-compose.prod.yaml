@@ -1,7 +1,6 @@
 services:
   app:
-    build:
-      context: .
+    image: nikandrynirina/anki-tube:latest  # Utilise l'image Docker construite et poussée sur Docker Hub
     ports:
       - "8030:8000"  # FastAPI exposé sur le port 8020
     environment:
