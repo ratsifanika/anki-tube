@@ -41,7 +41,6 @@ class AnkiExportRequest(BaseModel):
 class CardGenerationRequest(BaseModel):
     video_url: str
     difficulty: str = "intermediaire"
-    card_count: int = 10
     language: str = "fr"
 
 

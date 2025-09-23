@@ -2721,7 +2721,6 @@ let NewCollection = class NewCollection extends i {
                 body: JSON.stringify({
                     video_url: url,
                     difficulty: 'intermediaire',
-                    card_count: 5,
                     language: 'en'
                 })
             });

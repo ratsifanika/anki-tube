@@ -10,10 +10,21 @@ import datetime
 class CardGenerationService:
     def __init__(self):
         self.client = openai.OpenAI(api_key=os.getenv("LLM_API_KEY"))
+    
+    def compute_card_count(self, transcript: str, difficulty: str) -> int:
+        """Calcule le nombre de cartes à générer en fonction de la longueur de la transcription et de la difficulté"""
+        base_count = max(5, len(transcript) // 100)  # 1 carte pour chaque 100 caractères, minimum 5
+        difficulty_multiplier = {
+            "facile": 0.8,
+            "intermediaire": 1.0,
+            "avance": 1.2
+        }.get(difficulty, 1.0)
+        
+        return int(base_count * difficulty_multiplier)
 
-    def generate_cards(self, transcript: str, difficulty: str, card_count: int, language: str) -> List[AnkiCard]:
+    def generate_cards(self, transcript: str, difficulty: str, language: str) -> List[AnkiCard]:
         """Génère des cartes Anki à partir d'une transcription"""
-
+        card_count = self.compute_card_count(transcript, difficulty)
         difficulty_prompts = {
             "facile": "concepts de base et définitions simples",
             "intermediaire": "compréhension approfondie et applications pratiques",

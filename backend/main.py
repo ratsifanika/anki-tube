@@ -122,22 +122,21 @@ async def generate_cards(request: CardGenerationRequest,
         # # 2. Transcrire l'audio
         transcript = transcription_service.transcribe_audio(audio_file)
 
-        # # 3. Nettoyer le fichier audio
-        # transcription_service.cleanup_audio_file(audio_file)
+        # 3. Nettoyer le fichier audio
+        transcription_service.cleanup_audio_file(audio_file)
 
 
         # video_title = youtube_service.get_youtube_title(request.video_url)
         print(f"video_id:{video_id}, video_title:{video_title}")
 
-        # transcript = transcription_service.get_transcript(video_id, languages=[request.language])
-        # 4. Générer les cartes avec OpenAI
-        # cards = card_generation_service.generate_cards(
-        #     transcript=transcript,
-        #     difficulty=request.difficulty,
-        #     card_count=request.card_count,
-        #     language=request.language
-        # )
-        cards = card_generation_service.generate_random_cards(request.card_count)
+        transcript = transcription_service.get_transcript(video_id, languages=[request.language])
+        #4. Générer les cartes avec OpenAI
+        cards = card_generation_service.generate_cards(
+            transcript=transcript,
+            difficulty=request.difficulty,
+            language=request.language
+        )
+        # cards = card_generation_service.generate_random_cards(request.card_count)
         for card in cards:
             print(f"Generated card: {card}")
 

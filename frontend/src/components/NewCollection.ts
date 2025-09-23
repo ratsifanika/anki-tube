@@ -105,7 +105,6 @@ export class NewCollection extends LitElement {
         {
           video_url: url,
           difficulty: 'intermediaire',
-          card_count: 5,
           language: 'en'
          }
       )

@@ -1,11 +1,13 @@
 from youtube_transcript_api import YouTubeTranscriptApi
 import yt_dlp
 import os
-import whisper
+# import whisper
+from faster_whisper import WhisperModel
 
 class TranscriptionService:
     def __init__(self):
-        self.model = whisper.load_model("tiny")#other options: "tiny","base", "small", "medium", "large"
+        # self.model = whisper.load_model("tiny")#other options: "tiny","base", "small", "medium", "large"
+        self.model = WhisperModel("tiny", device="cpu", compute_type="int8")
 
     # Fetch transcript from a youtube video using the video id
     def get_transcript(self, video_id: str, languages: list = None) -> str:
@@ -96,8 +98,17 @@ class TranscriptionService:
 
     def transcribe_audio(self, audio_file: str) -> str:
         """Transcrit un fichier audio en texte"""
-        result = self.model.transcribe(audio_file)
-        return result["text"]
+        # result = self.model.transcribe(audio_file)
+        # return result["text"]
+
+        segments, info = self.model.transcribe(audio_file)
+        
+        # Reconstituer le texte complet
+        text = ""
+        for segment in segments:
+            text += segment.text + " "
+            
+        return text.strip()
 
     def cleanup_audio_file(self, audio_file: str):
         """Supprime le fichier audio temporaire"""
