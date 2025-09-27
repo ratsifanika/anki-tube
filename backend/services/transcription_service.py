@@ -35,7 +35,7 @@ class TranscriptionService:
 
             # More efficient way to concatenate all text snippets
             transcript_text = " ".join(snippet.text for snippet in fetched_transcript)
-            print(f"Transcripted Text: {transcript_text}")
+            # print(f"Transcripted Text: {transcript_text}")
             return transcript_text
 
         except Exception as e:

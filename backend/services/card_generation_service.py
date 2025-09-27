@@ -19,8 +19,8 @@ class CardGenerationService:
             "intermediaire": 1.0,
             "avance": 1.2
         }.get(difficulty, 1.0)
-        
-        return int(base_count * difficulty_multiplier)
+        card_count = min(60, int(base_count * difficulty_multiplier))  # Limite à 60
+        return card_count
 
     def generate_cards(self, transcript: str, difficulty: str, language: str) -> List[AnkiCard]:
         """Génère des cartes Anki à partir d'une transcription"""
@@ -67,7 +67,7 @@ class CardGenerationService:
         {transcript}
 
         Génère exactement {card_count} cartes d'apprentissage en {language_names.get(language, language)} basées sur cette transcription."""
-
+        print("Prompt: ", system_prompt)
         try:
             #décommenter la ligne suivante si vous utilisez l'API GEMINI de Google
             #self.client.base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
@@ -82,6 +82,7 @@ class CardGenerationService:
             )
 
             content = response.choices[0].message.content
+            print("Response from LLM:", content)
 
             # Parser la réponse JSON
             try:

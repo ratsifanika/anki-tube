@@ -212,6 +212,28 @@ async def get_collection(collection_id: str, db: AsyncSession = Depends(get_asyn
 
     return collection
 
+@app.get("/api/collection/{collection_id}/stats")
+async def get_collection_stats(collection_id: str, db: AsyncSession = Depends(get_async_session)):
+    """Récupère les statistiques d'une collection Anki"""
+    stmt = select(
+        func.count(AnkiCard.id).label("total_cards"),
+        func.sum(AnkiCard.seen).label("opened_cards"),
+        func.sum(AnkiCard.answered_correctly).label("correct_answers")
+    ).where(AnkiCard.collection_id == collection_id)
+
+    result = await db.execute(stmt)
+    stats = result.fetchone()
+    print(f"Stats fetched: {stats}")
+
+    if stats is None or stats.total_cards is None:
+        raise HTTPException(status_code=404, detail="No cards found for this collection.")
+
+    return {
+        "total_cards": stats.total_cards,
+        "opened_cards": stats.opened_cards or 0,
+        "correct_answers": stats.correct_answers or 0
+    }
+
 @app.get("/api/collection/{collection_id}/random")
 async def get_random_card(collection_id: str, db: AsyncSession = Depends(get_async_session)):
     # Calcul du score pondéré dans la clause ORDER BY

@@ -2877,9 +2877,9 @@ let CurrentCollection = class CurrentCollection extends i {
         this.lastCardEvaluation = null;
         this.userAnswer = '';
         //TODO: replace with a class that represent fetched stats from the API
-        this.totalCards = 10;
-        this.openedCards = 5;
-        this.correctAnswers = 3;
+        this.totalCards = null;
+        this.openedCards = null;
+        this.correctAnswers = null;
         this.isModalOpen = false;
     }
     onBeforeEnter(location) {
@@ -2888,6 +2888,22 @@ let CurrentCollection = class CurrentCollection extends i {
     willUpdate(_changedProperties) {
         if (_changedProperties.has('collectionId') && this.collectionId) {
             this.fetchCollectionData();
+        }
+    }
+    async fetchCollectionStats() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/collection/${this.collectionData?.id}/stats`);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const data = await response.json();
+            console.log('Collection stats data:', data);
+            this.totalCards = data.total_cards;
+            this.openedCards = data.opened_cards;
+            this.correctAnswers = data.correct_answers;
+        }
+        catch (error) {
+            console.error('Error fetching collection stats:', error);
         }
     }
     async fetchCollectionData() {
@@ -2906,6 +2922,7 @@ let CurrentCollection = class CurrentCollection extends i {
             console.log('Data fetched:', data);
             this.collectionData = Collection.fromJSON(data);
             console.log('Collection data fetched:', this.collectionData);
+            this.fetchCollectionStats();
             this.currentCard = await this.getRandomCard();
         }
         catch (error) {
@@ -2959,7 +2976,7 @@ let CurrentCollection = class CurrentCollection extends i {
         <div class="collection-stats">
           <div class="stat-card">
             <span class="stat-number">${this.totalCards}</span>
-            <span class="stat-label">Cartes Total</span>
+            <span class="stat-label">Cartes Totales</span>
           </div>
           <div class="stat-card">
             <span class="stat-number">${this.openedCards}</span>
@@ -3305,6 +3322,15 @@ __decorate([
 __decorate([
     r()
 ], CurrentCollection.prototype, "userAnswer", void 0);
+__decorate([
+    r()
+], CurrentCollection.prototype, "totalCards", void 0);
+__decorate([
+    r()
+], CurrentCollection.prototype, "openedCards", void 0);
+__decorate([
+    r()
+], CurrentCollection.prototype, "correctAnswers", void 0);
 __decorate([
     r()
 ], CurrentCollection.prototype, "isModalOpen", void 0);

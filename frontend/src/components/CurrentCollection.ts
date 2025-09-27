@@ -260,19 +260,35 @@ export class CurrentCollection extends LitElement {
   @state() lastCardEvaluation: CardEvaluation | null = null;
   @state() userAnswer: string = '';
   //TODO: replace with a class that represent fetched stats from the API
-  totalCards:number = 10;
-  openedCards:number = 5;
-  correctAnswers:number = 3;
+  @state() totalCards:number | null = null;
+  @state() openedCards:number | null = null;
+  @state() correctAnswers:number | null = null;
   @state() isModalOpen: boolean = false;
-
 
   onBeforeEnter(location: RouterLocation) {
     this.collectionId = location.params.id as string;
+
   }
 
   protected willUpdate(_changedProperties: PropertyValues): void {
     if (_changedProperties.has('collectionId') && this.collectionId) {
       this.fetchCollectionData();
+    }
+  }
+
+  private async fetchCollectionStats() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/collection/${this.collectionData?.id}/stats`);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const data = await response.json();
+      console.log('Collection stats data:', data);
+      this.totalCards = data.total_cards;
+      this.openedCards = data.opened_cards;
+      this.correctAnswers = data.correct_answers;
+    } catch (error) {
+      console.error('Error fetching collection stats:', error);
     }
   }
 
@@ -292,6 +308,7 @@ export class CurrentCollection extends LitElement {
       console.log('Data fetched:', data);
       this.collectionData = Collection.fromJSON(data);
       console.log('Collection data fetched:', this.collectionData);
+      this.fetchCollectionStats();
       this.currentCard = await this.getRandomCard();
     } catch (error) {
       console.error('Error fetching collection data:', error);
@@ -348,7 +365,7 @@ export class CurrentCollection extends LitElement {
         <div class="collection-stats">
           <div class="stat-card">
             <span class="stat-number">${this.totalCards}</span>
-            <span class="stat-label">Cartes Total</span>
+            <span class="stat-label">Cartes Totales</span>
           </div>
           <div class="stat-card">
             <span class="stat-number">${this.openedCards}</span>
