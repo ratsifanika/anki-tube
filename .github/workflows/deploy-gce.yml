@@ -37,6 +37,13 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.GCE_SSH_PRIVATE_KEY }}
           SSH_USER: ${{ secrets.GCE_SSH_USER }}
           SSH_HOST: ${{ secrets.GCE_SSH_HOST }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
         run: |
           # Installer la clé SSH
           echo "$SSH_PRIVATE_KEY" > ssh_key
@@ -46,7 +53,7 @@ jobs:
           scp -o StrictHostKeyChecking=no -i ssh_key docker-compose.prod.yaml $SSH_USER@$SSH_HOST:/home/$SSH_USER/docker-compose.prod.yaml
           
           # Se connecter à l'instance et déployer
-          ssh -o StrictHostKeyChecking=no -i ssh_key $SSH_USER@$SSH_HOST << 'EOF'
+          ssh -o StrictHostKeyChecking=no -i ssh_key $SSH_USER@$SSH_HOST bash -s << 'EOF'
             # Installer Docker si nécessaire
             if ! command -v docker &> /dev/null; then
               sudo apt-get update
@@ -54,7 +61,7 @@ jobs:
               sudo systemctl start docker
               sudo systemctl enable docker
               sudo usermod -aG docker $USER
-              echo "Docker installé, redémarrage de la session nécessaire"
+              echo "Docker installé"
             fi
             
             # Installer Docker Compose si nécessaire
@@ -63,39 +70,27 @@ jobs:
               sudo chmod +x /usr/local/bin/docker-compose
             fi
 
-             # Créer le fichier .env avec les secrets GitHub
-            cat > /home/$USER/.env <<EOT
-            ENV=prod
-            MYSQL_USER=${{ secrets.MYSQL_USER }}
-            MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
-            MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
-            MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
-            MYSQL_HOST=database
-            MYSQL_PORT=3306
-            LLM_API_KEY=${{ secrets.LLM_API_KEY }}
-            EOT
+            # Créer le fichier .env avec les secrets GitHub
+            cat > /home/$USER/.env << 'ENVEOF'
+ENV=prod
+MYSQL_USER=${MYSQL_USER}
+MYSQL_PASSWORD=${MYSQL_PASSWORD}
+MYSQL_DATABASE=${MYSQL_DATABASE}
+MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+MYSQL_HOST=database
+MYSQL_PORT=3306
+LLM_API_KEY=${LLM_API_KEY}
+ENVEOF
             
             # S'assurer que l'utilisateur est dans le groupe docker
             sudo usermod -aG docker $USER
             
-            # Utiliser sudo pour les commandes Docker si nécessaire
-            # ou utiliser newgrp pour rafraîchir les permissions de groupe
-            if ! docker ps &> /dev/null; then
-              echo "Utilisation de sudo pour Docker car les permissions de groupe ne sont pas encore effectives"
-              # Login à Docker Hub avec sudo
-              echo "${{ secrets.DOCKERHUB_TOKEN }}" | sudo docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
-              
-              # Déployer avec Docker Compose avec sudo
-              sudo docker-compose -f /home/$USER/docker-compose.prod.yaml pull
-              sudo docker-compose -f /home/$USER/docker-compose.prod.yaml up -d
-            else
-              # Login à Docker Hub
-              echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
-              
-              # Déployer avec Docker Compose
-              docker-compose -f /home/$USER/docker-compose.prod.yaml pull
-              docker-compose -f /home/$USER/docker-compose.prod.yaml up -d
-            fi
+            # Utiliser sudo pour les commandes Docker
+            echo "${DOCKERHUB_TOKEN}" | sudo docker login -u ${DOCKERHUB_USERNAME} --password-stdin
+            
+            # Déployer avec Docker Compose
+            sudo docker-compose -f /home/$USER/docker-compose.prod.yaml --env-file /home/$USER/.env pull
+            sudo docker-compose -f /home/$USER/docker-compose.prod.yaml --env-file /home/$USER/.env up -d
           EOF
           
           # Nettoyer
