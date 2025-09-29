@@ -71,7 +71,7 @@ jobs:
             fi
 
             # Créer le fichier .env avec les secrets GitHub
-            cat > /home/\$USER/.env << ENVEOF
+            cat > /home/\$USER/.env << CATEOF
             ENV=prod
             MYSQL_USER=$MYSQL_USER
             MYSQL_PASSWORD=$MYSQL_PASSWORD
@@ -80,7 +80,7 @@ jobs:
             MYSQL_HOST=database
             MYSQL_PORT=3306
             LLM_API_KEY=$LLM_API_KEY
-            ENVEOF
+            CATEOF
 
             # S'assurer que l'utilisateur est dans le groupe docker
             sudo usermod -aG docker \$USER
