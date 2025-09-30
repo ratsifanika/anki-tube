@@ -71,7 +71,7 @@ jobs:
             fi
 
             # Créer le fichier .env avec les secrets GitHub
-            cat > /home/\$USER/.env << CATEOF
+            cat > /home/\$USER/.env <<-CATEOF
             ENV=prod
             MYSQL_USER=$MYSQL_USER
             MYSQL_PASSWORD=$MYSQL_PASSWORD
