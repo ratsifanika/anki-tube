@@ -81,7 +81,6 @@ jobs:
             MYSQL_PORT=3306
             LLM_API_KEY=$LLM_API_KEY
             CATEOF
-
             # S'assurer que l'utilisateur est dans le groupe docker
             sudo usermod -aG docker \$USER
 
