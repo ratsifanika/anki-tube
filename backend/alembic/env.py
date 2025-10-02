@@ -6,12 +6,17 @@ from sqlmodel import SQLModel
 from alembic import context
 from models.anki import AnkiCard
 from users import User
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
 
-config.set_main_option("sqlalchemy.url", "mysql+mysqlconnector://ankitube:ankitube@database/ankitube")
+config.set_main_option("sqlalchemy.url", f"mysql+mysqlconnector://{os.getenv('MYSQL_USER')}:{os.getenv('MYSQL_PASSWORD')}"
+    f"@{os.getenv('MYSQL_HOST', 'database')}:{os.getenv('MYSQL_PORT', '3306')}/{os.getenv('MYSQL_DATABASE', 'ankitube')}")
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
