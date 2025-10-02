@@ -2,7 +2,7 @@ services:
   app:
     image: nikandrynirina/anki-tube:latest  # Utilise l'image Docker construite et poussée sur Docker Hub
     ports:
-      - "8030:8000"  # FastAPI exposé sur le port 8020
+      - "8000:8000"  # FastAPI exposé sur le port 8020
     environment:
       - ENV=prod  # Indique l'environnement de production
       - MYSQL_USER=${MYSQL_USER}
@@ -18,10 +18,10 @@ services:
   database:
     image: mysql:5.7
     environment:
-      MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-      MYSQL_USER=${MYSQL_USER}
-      MYSQL_PASSWORD=${MYSQL_PASSWORD}
-      MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
     volumes:
       - mysql_data:/var/lib/mysql
     # ports:
