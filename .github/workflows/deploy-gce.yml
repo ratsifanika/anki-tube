@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
+  workflow_dispatch:  # Pour lancement manuel
 
 jobs:
   build-and-deploy:
@@ -48,50 +48,54 @@ jobs:
           # Installer la clé SSH
           echo "$SSH_PRIVATE_KEY" > ssh_key
           chmod 600 ssh_key
-
-          # Copier docker-compose.prod.yaml sur l'instance GCE
+          
+          # Créer le fichier .env localement
+          cat > .env << EOF
+          ENV=prod
+          MYSQL_USER=$MYSQL_USER
+          MYSQL_PASSWORD=$MYSQL_PASSWORD
+          MYSQL_DATABASE=$MYSQL_DATABASE
+          MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD
+          MYSQL_HOST=database
+          MYSQL_PORT=3306
+          LLM_API_KEY=$LLM_API_KEY
+          EOF
+          
+          # Copier les fichiers sur l'instance GCE
           scp -o StrictHostKeyChecking=no -i ssh_key docker-compose.prod.yaml $SSH_USER@$SSH_HOST:/home/$SSH_USER/docker-compose.prod.yaml
-
+          scp -o StrictHostKeyChecking=no -i ssh_key .env $SSH_USER@$SSH_HOST:/home/$SSH_USER/.env
+          
           # Se connecter à l'instance et déployer
-          ssh -o StrictHostKeyChecking=no -i ssh_key $SSH_USER@$SSH_HOST bash -s << EOF
+          ssh -o StrictHostKeyChecking=no -i ssh_key $SSH_USER@$SSH_HOST << 'EOSSH'
             # Installer Docker si nécessaire
             if ! command -v docker &> /dev/null; then
               sudo apt-get update
               sudo apt-get install -y docker.io
               sudo systemctl start docker
               sudo systemctl enable docker
-              sudo usermod -aG docker \$USER
+              sudo usermod -aG docker $USER
               echo "Docker installé"
             fi
-
+            
             # Installer Docker Compose si nécessaire
             if ! command -v docker-compose &> /dev/null; then
-              sudo curl -L "https://github.com/docker/compose/releases/download/v2.20.2/docker-compose-\$(uname -s)-\$(uname -m)" -o /usr/local/bin/docker-compose
+              sudo curl -L "https://github.com/docker/compose/releases/download/v2.20.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
               sudo chmod +x /usr/local/bin/docker-compose
             fi
-
-            # Créer le fichier .env avec les secrets GitHub
-            cat > /home/\$USER/.env << CATEOF
-            ENV=prod
-            MYSQL_USER=$MYSQL_USER
-            MYSQL_PASSWORD=$MYSQL_PASSWORD
-            MYSQL_DATABASE=$MYSQL_DATABASE
-            MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD
-            MYSQL_HOST=database
-            MYSQL_PORT=3306
-            LLM_API_KEY=$LLM_API_KEY
-            CATEOF
-
+            
             # S'assurer que l'utilisateur est dans le groupe docker
-            sudo usermod -aG docker \$USER
-
+            sudo usermod -aG docker $USER
+          EOSSH
+          
+          # Login et déploiement Docker
+          ssh -o StrictHostKeyChecking=no -i ssh_key $SSH_USER@$SSH_HOST << EOSSH2
             # Utiliser sudo pour les commandes Docker
-            echo "\$DOCKERHUB_TOKEN" | sudo docker login -u \$DOCKERHUB_USERNAME --password-stdin
-
+            echo "$DOCKERHUB_TOKEN" | sudo docker login -u $DOCKERHUB_USERNAME --password-stdin
+            
             # Déployer avec Docker Compose
             sudo docker-compose -f /home/\$USER/docker-compose.prod.yaml --env-file /home/\$USER/.env pull
-            sudo docker-compose -f /home/\$USER/docker-compose.prod.yaml --env-file /home\$USER/.env up -d
-          EOF
-
+            sudo docker-compose -f /home/\$USER/docker-compose.prod.yaml --env-file /home/\$USER/.env up -d
+          EOSSH2
+          
           # Nettoyer
-          rm ssh_key
+          rm ssh_key .env
