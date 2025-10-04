@@ -1,10 +1,24 @@
 services:
-  app:
-    image: nikandrynirina/anki-tube:latest  # Utilise l'image Docker construite et poussée sur Docker Hub
-    ports:
-      - "8000:8000"  # FastAPI exposé sur le port 8020
+  migration:
+    image: nikandrynirina/anki-tube:latest
     environment:
-      - ENV=prod  # Indique l'environnement de production
+      - ENV=prod
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_HOST=${MYSQL_HOST}
+      - MYSQL_PORT=${MYSQL_PORT}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+    depends_on:
+      - database
+    command: ["sh", "-c", "sleep 10 && alembic upgrade head"]
+    restart: "no"
+
+  app:
+    image: nikandrynirina/anki-tube:latest
+    ports:
+      - "8030:8000"
+    environment:
+      - ENV=prod
       - MYSQL_USER=${MYSQL_USER}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_HOST=${MYSQL_HOST}
@@ -12,8 +26,11 @@ services:
       - MYSQL_DATABASE=${MYSQL_DATABASE}
       - LLM_API_KEY=${LLM_API_KEY}
     depends_on:
-      - database
-    command: ["sh", "-c", "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000"]
+      migration:
+        condition: service_completed_successfully
+      database:
+        condition: service_started
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 
   database:
     image: mysql:5.7
@@ -25,7 +42,7 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     # ports:
-    #   - "3306:3306"  # Exposé pour tests locaux, peut être supprimé en prod si pas nécessaire
+    #   - "3306:3306"
 
 volumes:
   mysql_data:
