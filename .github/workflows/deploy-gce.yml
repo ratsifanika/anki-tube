@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
   workflow_dispatch:  # Pour lancement manuel
 
 jobs:
@@ -63,6 +68,7 @@ jobs:
           
           # Copier les fichiers sur l'instance GCE
           scp -o StrictHostKeyChecking=no -i ssh_key docker-compose.prod.yaml $SSH_USER@$SSH_HOST:/home/$SSH_USER/docker-compose.prod.yaml
+          scp -o StrictHostKeyChecking=no -i ssh_key Caddyfile $SSH_USER@$SSH_HOST:/home/$SSH_USER/Caddyfile
           scp -o StrictHostKeyChecking=no -i ssh_key .env $SSH_USER@$SSH_HOST:/home/$SSH_USER/.env
           
           # Se connecter à l'instance et déployer
