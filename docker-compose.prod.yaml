@@ -1,4 +1,21 @@
 services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"  # HTTP/3
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+    deploy:
+      resources:
+        limits:
+          memory: 256M
   migration:
     image: nikandrynirina/anki-tube:latest
     environment:
@@ -15,8 +32,8 @@ services:
 
   app:
     image: nikandrynirina/anki-tube:latest
-    ports:
-      - "8030:8000"
+    expose:
+      - 8000
     environment:
       - ENV=prod
       - MYSQL_USER=${MYSQL_USER}
@@ -46,3 +63,5 @@ services:
 
 volumes:
   mysql_data:
+  caddy_data:
+  caddy_config:
