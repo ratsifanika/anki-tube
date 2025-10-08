@@ -33,6 +33,7 @@ from models.anki import AnkiCard
 import logging
 import traceback
 from fastapi.staticfiles import StaticFiles
+from services.answer_evaluation_service import AnswerEvaluationService
 
 # Charge les variables d'environnement depuis un fichier .env
 # Assurez-vous que votre fichier .env est dans le même répertoire que main.py
@@ -65,6 +66,7 @@ transcription_service = TranscriptionService()
 youtube_service = YoutubeService()
 card_generation_service = CardGenerationService()
 anki_exporter = AnkiExporter()
+answer_evaluation_service = AnswerEvaluationService()
 
 
 
@@ -269,8 +271,9 @@ async def evaluate_answer(request: AnswerEvaluationRequest, db: AsyncSession = D
         raise HTTPException(status_code=404, detail="Card not found")
 
     # Incrémenter le compteur de réponses correctes
-    answerd_correctly = True#TODO: Implement actual answer checking logic
-    comment = "Your answer is correct!" if answerd_correctly else "Your answer is incorrect."#TODO: Implement actual comment logic
+    evaluation = answer_evaluation_service.evaluate(request.answer, card.front)
+    answerd_correctly = True if evaluation["score"] >= 0.5 else False
+    comment = evaluation["feedback"]
     card.answered_correctly += 1 if answerd_correctly else 0
     card.last_given_answer = request.answer
     await db.commit()
