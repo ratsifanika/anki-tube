@@ -2690,6 +2690,11 @@ let NewCollection = class NewCollection extends i {
         try {
             this.loading = true;
             const response = await this._callBackend(url);
+            if (response.status === 401) {
+                // Token might be invalid or expired, redirect to login
+                window.location.href = '/login';
+                return;
+            }
             if (response.status === 200) {
                 // The backend returns a collection ID
                 const collectionId = response.collectionId;
@@ -3338,13 +3343,136 @@ CurrentCollection = __decorate([
     t('current-collection')
 ], CurrentCollection);
 
+class InvalidTokenError extends Error {
+}
+InvalidTokenError.prototype.name = "InvalidTokenError";
+function b64DecodeUnicode(str) {
+    return decodeURIComponent(atob(str).replace(/(.)/g, (m, p) => {
+        let code = p.charCodeAt(0).toString(16).toUpperCase();
+        if (code.length < 2) {
+            code = "0" + code;
+        }
+        return "%" + code;
+    }));
+}
+function base64UrlDecode(str) {
+    let output = str.replace(/-/g, "+").replace(/_/g, "/");
+    switch (output.length % 4) {
+        case 0:
+            break;
+        case 2:
+            output += "==";
+            break;
+        case 3:
+            output += "=";
+            break;
+        default:
+            throw new Error("base64 string is not of the correct length");
+    }
+    try {
+        return b64DecodeUnicode(output);
+    }
+    catch (err) {
+        return atob(output);
+    }
+}
+function jwtDecode(token, options) {
+    if (typeof token !== "string") {
+        throw new InvalidTokenError("Invalid token specified: must be a string");
+    }
+    options || (options = {});
+    const pos = options.header === true ? 0 : 1;
+    const part = token.split(".")[pos];
+    if (typeof part !== "string") {
+        throw new InvalidTokenError(`Invalid token specified: missing part #${pos + 1}`);
+    }
+    let decoded;
+    try {
+        decoded = base64UrlDecode(part);
+    }
+    catch (e) {
+        throw new InvalidTokenError(`Invalid token specified: invalid base64 for part #${pos + 1} (${e.message})`);
+    }
+    try {
+        return JSON.parse(decoded);
+    }
+    catch (e) {
+        throw new InvalidTokenError(`Invalid token specified: invalid json for part #${pos + 1} (${e.message})`);
+    }
+}
+
+// frontend/auth-state.ts
+// 2. Fonction pour vérifier si l'utilisateur est authentifié
+function isAuthenticated() {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+        return false;
+    }
+    try {
+        // jwtDecode retourne un type any par défaut, nous le castons pour accéder à 'exp'
+        const decodedToken = jwtDecode(token);
+        const currentTime = Date.now() / 1000; // Temps actuel en secondes
+        if (decodedToken.exp < currentTime) {
+            console.warn('Token expiré. Déconnexion automatique.');
+            logout(); // Déconnecte l'utilisateur si le token est expiré
+            return false;
+        }
+        return true;
+    }
+    catch (error) {
+        console.error('Erreur lors du décodage du token JWT:', error);
+        logout(); // Token invalide ou corrompu
+        return false;
+    }
+}
+// 3. Fonction pour récupérer les informations de l'utilisateur
+function getUserInfo() {
+    if (isAuthenticated()) {
+        const userInfoString = localStorage.getItem('user_info');
+        if (userInfoString) {
+            // Caster la chaîne JSON parsée en UserInfo
+            return JSON.parse(userInfoString);
+        }
+        // Si les infos ne sont pas dans localStorage, essayez de les extraire du token
+        const token = localStorage.getItem('access_token');
+        if (token) {
+            try {
+                // Caster le token décodé en UserInfo
+                return jwtDecode(token);
+            }
+            catch (e) {
+                console.error("Erreur lors du décodage du token pour UserInfo:", e);
+                return null;
+            }
+        }
+    }
+    return null;
+}
+// 4. Fonction pour la déconnexion
+function logout() {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('user_info');
+    // Déclenche un événement global pour que d'autres composants puissent réagir à la déconnexion
+    window.dispatchEvent(new CustomEvent('auth-status-changed', {
+        detail: { isAuthenticated: false, token: null, user: null }
+    }));
+}
+
 let CollectionList = class CollectionList extends i {
     constructor() {
-        super(...arguments);
+        super();
         this.collections = [];
         this.loading = false;
         this.page = 1;
+        this.isAuthenticated = false;
         this.observer = null;
+        this.isAuthenticated = isAuthenticated();
+        // Écoute les changements globaux de l'état d'authentification
+        window.addEventListener('auth-status-changed', this._handleAuthStatusChange.bind(this));
+    }
+    // Met à jour l'état interne du composant quand l'état d'auth global change
+    _handleAuthStatusChange() {
+        this.isAuthenticated = isAuthenticated();
     }
     firstUpdated() {
         this.loadMore();
@@ -3397,8 +3525,10 @@ let CollectionList = class CollectionList extends i {
     render() {
         return x `
          <ul class="container">
-            ${this.collections.map((item) => x `<li part="list-item"><a href="/collection/${item.uuid}">${item.video_title}</a></li>`)}
-            ${this.loading ? x `<div class="loading">Chargement...</div>` : ''}
+            ${this.isAuthenticated ? x `
+                ${this.collections.map((item) => x `<li part="list-item"><a href="/collection/${item.uuid}">${item.video_title}</a></li>`)}
+                ${this.loading ? x `<div class="loading">Chargement...</div>` : ''}
+                ` : x ``}
             <!-- Élément sentinelle pour détecter le bas -->
             <div id="sentinel"></div>
         `;
@@ -3442,6 +3572,9 @@ __decorate([
 __decorate([
     r()
 ], CollectionList.prototype, "page", void 0);
+__decorate([
+    n({ type: Boolean })
+], CollectionList.prototype, "isAuthenticated", void 0);
 CollectionList = __decorate([
     t('collection-list')
 ], CollectionList);
@@ -3832,126 +3965,12 @@ AuthLogin = __decorate([
     t('auth-login')
 ], AuthLogin);
 
-class InvalidTokenError extends Error {
-}
-InvalidTokenError.prototype.name = "InvalidTokenError";
-function b64DecodeUnicode(str) {
-    return decodeURIComponent(atob(str).replace(/(.)/g, (m, p) => {
-        let code = p.charCodeAt(0).toString(16).toUpperCase();
-        if (code.length < 2) {
-            code = "0" + code;
-        }
-        return "%" + code;
-    }));
-}
-function base64UrlDecode(str) {
-    let output = str.replace(/-/g, "+").replace(/_/g, "/");
-    switch (output.length % 4) {
-        case 0:
-            break;
-        case 2:
-            output += "==";
-            break;
-        case 3:
-            output += "=";
-            break;
-        default:
-            throw new Error("base64 string is not of the correct length");
-    }
-    try {
-        return b64DecodeUnicode(output);
-    }
-    catch (err) {
-        return atob(output);
-    }
-}
-function jwtDecode(token, options) {
-    if (typeof token !== "string") {
-        throw new InvalidTokenError("Invalid token specified: must be a string");
-    }
-    options || (options = {});
-    const pos = options.header === true ? 0 : 1;
-    const part = token.split(".")[pos];
-    if (typeof part !== "string") {
-        throw new InvalidTokenError(`Invalid token specified: missing part #${pos + 1}`);
-    }
-    let decoded;
-    try {
-        decoded = base64UrlDecode(part);
-    }
-    catch (e) {
-        throw new InvalidTokenError(`Invalid token specified: invalid base64 for part #${pos + 1} (${e.message})`);
-    }
-    try {
-        return JSON.parse(decoded);
-    }
-    catch (e) {
-        throw new InvalidTokenError(`Invalid token specified: invalid json for part #${pos + 1} (${e.message})`);
-    }
-}
-
-// frontend/auth-state.ts
-// 2. Fonction pour vérifier si l'utilisateur est authentifié
-function isAuthenticated() {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-        return false;
-    }
-    try {
-        // jwtDecode retourne un type any par défaut, nous le castons pour accéder à 'exp'
-        const decodedToken = jwtDecode(token);
-        const currentTime = Date.now() / 1000; // Temps actuel en secondes
-        if (decodedToken.exp < currentTime) {
-            console.warn('Token expiré. Déconnexion automatique.');
-            logout(); // Déconnecte l'utilisateur si le token est expiré
-            return false;
-        }
-        return true;
-    }
-    catch (error) {
-        console.error('Erreur lors du décodage du token JWT:', error);
-        logout(); // Token invalide ou corrompu
-        return false;
-    }
-}
-// 3. Fonction pour récupérer les informations de l'utilisateur
-function getUserInfo() {
-    if (isAuthenticated()) {
-        const userInfoString = localStorage.getItem('user_info');
-        if (userInfoString) {
-            // Caster la chaîne JSON parsée en UserInfo
-            return JSON.parse(userInfoString);
-        }
-        // Si les infos ne sont pas dans localStorage, essayez de les extraire du token
-        const token = localStorage.getItem('access_token');
-        if (token) {
-            try {
-                // Caster le token décodé en UserInfo
-                return jwtDecode(token);
-            }
-            catch (e) {
-                console.error("Erreur lors du décodage du token pour UserInfo:", e);
-                return null;
-            }
-        }
-    }
-    return null;
-}
-// 4. Fonction pour la déconnexion
-function logout() {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('user_info');
-    // Déclenche un événement global pour que d'autres composants puissent réagir à la déconnexion
-    window.dispatchEvent(new CustomEvent('auth-status-changed', {
-        detail: { isAuthenticated: false, token: null, user: null }
-    }));
-}
-
 let AppNav = class AppNav extends i {
     constructor() {
         super();
         this.isAuthenticated = false;
         this.userInfo = null;
+        this._menuOpen = false;
         this._updateAuthState();
         // Écoute les changements globaux de l'état d'authentification
         window.addEventListener('auth-status-changed', this._handleAuthStatusChange.bind(this));
@@ -3978,34 +3997,50 @@ let AppNav = class AppNav extends i {
             window.dispatchEvent(new PopStateEvent('popstate'));
         }
     }
+    _toggleMenu() {
+        this._menuOpen = !this._menuOpen;
+    }
+    _closeMenu() {
+        this._menuOpen = false;
+    }
     render() {
         return x `
-            <nav @click=${this._handleClick}>
-                <a href="/" class="logo">Anki-Tube</a>
+            <nav>
+                <a href="/" class="logo" @click=${this._closeMenu}>Anki-Tube</a>
 
-                <div class="nav-links">
-                    <a href="/">Accueil</a>
+                <button 
+                    class="menu-toggle ${this._menuOpen ? 'active' : ''}"
+                    @click=${this._toggleMenu}
+                    aria-label="Toggle menu"
+                >
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
 
-                    ${this.isAuthenticated
-            ? x `
-                              <a href="/">home</a>
-                          `
+                <div class="nav-content ${this._menuOpen ? 'open' : ''}" @click=${this._handleClick}>
+                    <div class="nav-links">
+                        ${this.isAuthenticated
+            ? x ``
             : x `
-                              <a href="/login">Se connecter</a>
-                              <a href="/register">S'enregistrer</a>
-                          `}
-                </div>
+                                <a href="/login">Se connecter</a>
+                                <a href="/register">S'enregistrer</a>
+                            `}
+                    </div>
 
-                <div class="auth-controls">
                     ${this.isAuthenticated
             ? x `
-                              <span class="welcome-message"
-                                  >Bienvenue, ${this.userInfo?.email || 'utilisateur'}!</span
-                              >
-                              <button @click=${this._handleLogout}>Déconnexion</button>
-                          `
+                            <div class="auth-controls">
+                                <span class="welcome-message">
+                                    Bienvenue, ${this.userInfo?.email || 'utilisateur'}!
+                                </span>
+                                <button @click=${this._handleLogout}>Déconnexion</button>
+                            </div>
+                        `
             : ''}
                 </div>
+
+                <div class="overlay ${this._menuOpen ? 'active' : ''}" @click=${this._closeMenu}></div>
             </nav>
         `;
     }
@@ -4014,7 +4049,7 @@ AppNav.styles = i$3 `
         :host {
             display: block;
             width: 100%;
-            background-color: #2c3e50; /* Couleur sombre pour la barre de navigation */
+            background-color: #2c3e50;
             color: white;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         }
@@ -4026,52 +4061,97 @@ AppNav.styles = i$3 `
             padding: 15px 20px;
             max-width: 1200px;
             margin: 0 auto;
-            flex-wrap: wrap; /* Permet aux éléments de passer à la ligne sur petits écrans */
+            position: relative;
         }
 
         .logo {
             font-size: 1.8em;
             font-weight: bold;
-            color: #4CAF50; /* Vert éclatant pour le logo */
+            color: #4CAF50;
             text-decoration: none;
-            margin-right: 20px;
+            z-index: 10;
+        }
+
+        /* Menu hamburger */
+        .menu-toggle {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            z-index: 10;
+        }
+
+        .menu-toggle span {
+            display: block;
+            width: 25px;
+            height: 3px;
+            background-color: white;
+            transition: all 0.3s ease;
+            border-radius: 2px;
+        }
+
+        .menu-toggle.active span:nth-child(1) {
+            transform: rotate(45deg) translate(7px, 7px);
+        }
+
+        .menu-toggle.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .menu-toggle.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -7px);
+        }
+
+        .nav-content {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            flex: 1;
+            justify-content: space-between;
+            margin-left: 40px;
         }
 
         .nav-links {
             display: flex;
-            gap: 25px; /* Espace entre les liens */
+            gap: 25px;
             align-items: center;
-            flex-wrap: wrap;
         }
 
         .nav-links a {
             color: white;
             text-decoration: none;
             font-weight: 500;
-            padding: 5px 0;
-            transition: color 0.3s ease;
+            padding: 5px 10px;
+            transition: all 0.3s ease;
+            border-radius: 4px;
         }
 
         .nav-links a:hover,
         .nav-links a.active {
-            color: #4CAF50; /* Changement de couleur au survol/actif */
+            color: #4CAF50;
+            background-color: rgba(76, 175, 80, 0.1);
         }
 
         .auth-controls {
             display: flex;
             align-items: center;
             gap: 15px;
-            flex-wrap: wrap;
         }
 
         .welcome-message {
             font-size: 0.95em;
-            color: #ecf0f1; /* Gris clair */
-            margin-right: 10px;
+            color: #ecf0f1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
         }
 
         button {
-            background-color: #e74c3c; /* Rouge pour déconnexion */
+            background-color: #e74c3c;
             color: white;
             border: none;
             padding: 8px 15px;
@@ -4079,52 +4159,135 @@ AppNav.styles = i$3 `
             cursor: pointer;
             font-size: 0.9em;
             transition: background-color 0.3s ease;
+            white-space: nowrap;
         }
 
         button:hover {
             background-color: #c0392b;
         }
 
-        /* Styles Responsifs */
-        @media (max-width: 768px) {
-            nav {
-                flex-direction: column;
-                align-items: flex-start;
-                padding: 10px 15px;
+        /* Tablettes */
+        @media (max-width: 900px) {
+            .welcome-message {
+                max-width: 150px;
             }
-
-            .logo {
-                margin-bottom: 15px;
-                width: 100%;
-                text-align: center;
+            
+            .nav-links {
+                gap: 15px;
             }
-
-            .nav-links, .auth-controls {
-                width: 100%;
-                justify-content: center; /* Centrer les liens */
-                margin-bottom: 10px;
-            }
-
-            .nav-links a, .auth-controls button, .welcome-message {
-                margin-bottom: 5px; /* Espacement vertical */
-            }
-
-            .auth-controls {
-                margin-top: 10px;
-                border-top: 1px solid rgba(255, 255, 255, 0.1);
-                padding-top: 10px;
+            
+            .nav-content {
+                gap: 20px;
+                margin-left: 20px;
             }
         }
 
-        @media (max-width: 480px) {
+        /* Mobiles */
+        @media (max-width: 768px) {
+            nav {
+                padding: 12px 15px;
+            }
+
+            .menu-toggle {
+                display: flex;
+            }
+
+            .nav-content {
+                position: fixed;
+                top: 0;
+                right: -100%;
+                height: 100vh;
+                width: 280px;
+                background-color: #34495e;
+                flex-direction: column;
+                align-items: stretch;
+                justify-content: flex-start;
+                padding: 80px 20px 20px;
+                margin: 0;
+                gap: 0;
+                box-shadow: -2px 0 10px rgba(0, 0, 0, 0.3);
+                transition: right 0.3s ease;
+                z-index: 9;
+                overflow-y: auto;
+            }
+
+            .nav-content.open {
+                right: 0;
+            }
+
             .nav-links {
                 flex-direction: column;
-                gap: 10px;
-            }
-            .nav-links a {
-                padding: 8px 0;
+                gap: 0;
                 width: 100%;
+                margin-bottom: 20px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                padding-bottom: 20px;
+            }
+
+            .nav-links a {
+                padding: 15px 10px;
+                width: 100%;
+                text-align: left;
+                border-radius: 0;
+            }
+
+            .auth-controls {
+                flex-direction: column;
+                width: 100%;
+                gap: 15px;
+                align-items: stretch;
+            }
+
+            .welcome-message {
                 text-align: center;
+                max-width: 100%;
+                padding: 10px;
+                background-color: rgba(76, 175, 80, 0.1);
+                border-radius: 5px;
+            }
+
+            button {
+                width: 100%;
+                padding: 12px;
+            }
+
+            /* Overlay pour fermer le menu */
+            .overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 8;
+            }
+
+            .overlay.active {
+                display: block;
+            }
+        }
+
+        /* Petits mobiles */
+        @media (max-width: 480px) {
+            .logo {
+                font-size: 1.5em;
+            }
+
+            .nav-content {
+                width: 100%;
+                right: -100%;
+            }
+        }
+
+        /* Très petits écrans */
+        @media (max-width: 360px) {
+            nav {
+                padding: 10px;
+            }
+
+            .logo {
+                font-size: 1.3em;
             }
         }
     `;
@@ -4134,6 +4297,9 @@ __decorate([
 __decorate([
     n({ type: Object })
 ], AppNav.prototype, "userInfo", void 0);
+__decorate([
+    r()
+], AppNav.prototype, "_menuOpen", void 0);
 AppNav = __decorate([
     t('app-nav')
 ], AppNav);

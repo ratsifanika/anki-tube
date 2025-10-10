@@ -1,12 +1,15 @@
 import { LitElement, css, html } from "lit";
-import { customElement, state } from "lit/decorators.js";
+import { customElement, state, property } from "lit/decorators.js";
 import { API_BASE_URL } from "../config/api";
+import { isAuthenticated } from "../auth-state";
 
 @customElement('collection-list')
 export class CollectionList extends LitElement {
     @state() collections: Array<{ uuid: string, video_title: string }> = [];
     @state() loading: boolean = false;
     @state() page: number = 1;
+    @property({ type: Boolean })
+    isAuthenticated: boolean = false;
     observer: IntersectionObserver | null = null;
 
     static styles = css`
@@ -38,6 +41,19 @@ export class CollectionList extends LitElement {
         }
 
         `;
+
+    constructor() {
+        super();
+        this.isAuthenticated = isAuthenticated();
+        // Écoute les changements globaux de l'état d'authentification
+        window.addEventListener('auth-status-changed', this._handleAuthStatusChange.bind(this));
+    }
+    // Met à jour l'état interne du composant quand l'état d'auth global change
+    private _handleAuthStatusChange() {
+        this.isAuthenticated = isAuthenticated();
+    }
+
+    
     firstUpdated() {
         this.loadMore();
 
@@ -92,8 +108,10 @@ export class CollectionList extends LitElement {
     render() {
         return html`
          <ul class="container">
-            ${this.collections.map((item) => html`<li part="list-item"><a href="/collection/${item.uuid}">${item.video_title}</a></li>`)}
-            ${this.loading ? html`<div class="loading">Chargement...</div>` : ''}
+            ${this.isAuthenticated ? html`
+                ${this.collections.map((item) => html`<li part="list-item"><a href="/collection/${item.uuid}">${item.video_title}</a></li>`)}
+                ${this.loading ? html`<div class="loading">Chargement...</div>` : ''}
+                ` : html``}
             <!-- Élément sentinelle pour détecter le bas -->
             <div id="sentinel"></div>
         `;
