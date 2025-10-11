@@ -73,6 +73,11 @@ export class NewCollection extends LitElement {
     try {
         this.loading = true;
         const response = await this._callBackend(url);
+        if (response.status === 401) {
+          // Token might be invalid or expired, redirect to login
+          window.location.href = '/login';
+          return;
+        }
         if (response.status === 200) {
             // The backend returns a collection ID
             const collectionId = response.collectionId;
@@ -110,7 +115,7 @@ export class NewCollection extends LitElement {
       )
       });
       if (!res.ok) {
-      return { status: res.status, collectionId: "" };
+        return { status: res.status, collectionId: "" };
       }
       const data = await res.json();
       return { status: res.status, collectionId: data.collection_uuid };
