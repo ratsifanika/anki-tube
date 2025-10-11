@@ -35,7 +35,11 @@ jobs:
           context: .
           file: Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/anki-tube:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/anki-tube:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/anki-tube:${{ github.sha }}
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/anki-tube:latest
+          cache-to: type=inline
 
       - name: Deploy to GCE
         env:
@@ -95,6 +99,15 @@ jobs:
           
           # Login et déploiement Docker
           ssh -o StrictHostKeyChecking=no -i ssh_key $SSH_USER@$SSH_HOST << EOSSH2
+            # Arrêter les conteneurs avant le nettoyage
+            sudo docker-compose -f /home/\$USER/docker-compose.prod.yaml down || true
+            # Nettoyer les dangling images (images <none>)
+            echo "Nettoyage des images pendantes..."
+            sudo docker image prune -f
+            # Nettoyer les anciennes versions de l'image anki-tube
+            echo "Suppression des anciennes versions d'anki-tube..."
+            sudo docker images nikandrynirina/anki-tube --format "{{.ID}} {{.Tag}}" | grep "<none>" | awk '{print \$1}' | xargs -r sudo docker rmi -f || true
+
             # Utiliser sudo pour les commandes Docker
             echo "$DOCKERHUB_TOKEN" | sudo docker login -u $DOCKERHUB_USERNAME --password-stdin
             
