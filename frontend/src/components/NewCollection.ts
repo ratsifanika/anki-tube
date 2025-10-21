@@ -128,13 +128,13 @@ export class NewCollection extends LitElement {
   render() {
     return html`
       <div class="container">
-        <h1>Créer une nouvelle collection</h1>
          <div class="search-box">
-            <input type="text" placeholder="Saisir une URL" ?disabled=${this.loading}>
+            <input type="text" placeholder="Saisir une URL de vidéo Youtube" ?disabled=${this.loading}>
             <button @click=${this._handleClick} ?disabled=${this.loading}>🪄</button>
          </div>
           ${this.loading ? html`<p>Chargement...</p>` : ''}
           ${this.error ? html`<p style="color: red;">${this.error}</p>` : ''}
+          <h1>Créer une collection de cartes d'apprentissage à partir d'une vidéo Youtube</h1>
       </div>
     `;
   }
