@@ -35,6 +35,7 @@ jobs:
           context: .
           file: Dockerfile
           push: true
+          no-cache: true
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/anki-tube:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/anki-tube:${{ github.sha }}

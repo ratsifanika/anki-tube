@@ -5,7 +5,7 @@ COPY ./frontend/package*.json ./
 COPY ./frontend/index.html ./dist/
 RUN npm install
 COPY ./frontend ./
-RUN npm run build 
+RUN npm run build || (echo "❌ NPM BUILD FAILED" && cat /root/.npm/_logs/*-debug.log && exit 1)
 
 # Stage 2: Backend avec SQLite
 FROM python:3.13-slim-bookworm
