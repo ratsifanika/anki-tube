@@ -1,0 +1,67 @@
+services:
+  migration:
+    image: nikandrynirina/anki-tube:latest
+    environment:
+      - ENV=prod
+      - MYSQL_USER=${MYSQL_USER:-ankitube}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-ankitube}
+      - MYSQL_HOST=${MYSQL_HOST:-database}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-ankitube}
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    depends_on:
+      - database
+    command: ["sh", "-c", "sleep 10 && alembic upgrade head"]
+    restart: "no"
+
+  app:
+    build:
+      context: .
+    ports:
+    - "8025:8000"
+    environment:
+      - ENV=prod
+      - MYSQL_USER=${MYSQL_USER:-ankitube}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-ankitube}
+      - MYSQL_HOST=${MYSQL_HOST:-database}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-ankitube}
+      - LLM_API_KEY=${LLM_API_KEY}
+    depends_on:
+      migration:
+        condition: service_completed_successfully
+      database:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    restart: unless-stopped
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+
+  database:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: ankitube
+      MYSQL_PASSWORD: ankitube
+      MYSQL_DATABASE: ankitube
+      MYSQL_INNODB_BUFFER_POOL_SIZE: 128M
+    volumes:
+      - mysql_data:/var/lib/mysql
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    # ports:
+    #   - "3306:3306"
+
+volumes:
+  mysql_data:
