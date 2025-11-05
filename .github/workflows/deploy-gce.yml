@@ -42,7 +42,7 @@ jobs:
           no-cache: true
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/anki-tube:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/anki-tube:$IMAGE_TAG
+            ${{ secrets.DOCKERHUB_USERNAME }}/anki-tube:${{ env.IMAGE_TAG }}
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/anki-tube:latest
           cache-to: type=inline
 
