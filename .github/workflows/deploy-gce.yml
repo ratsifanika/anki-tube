@@ -41,8 +41,8 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/anki-tube:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/anki-tube:${{ github.sha }}
-          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/anki-tube:latest
-          cache-to: type=inline
+          #cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/anki-tube:latest
+          #cache-to: type=inline
 
       - name: Deploy to GCE
         env:
