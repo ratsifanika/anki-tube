@@ -15,6 +15,8 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     environment: production
+    env:
+      IMAGE_TAG: ${{ github.sha }}
 
     steps:
       - name: Checkout code
@@ -40,9 +42,9 @@ jobs:
           no-cache: true
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/anki-tube:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/anki-tube:${{ github.sha }}
-          #cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/anki-tube:latest
-          #cache-to: type=inline
+            ${{ secrets.DOCKERHUB_USERNAME }}/anki-tube:$IMAGE_TAG
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/anki-tube:latest
+          cache-to: type=inline
 
       - name: Deploy to GCE
         env:
@@ -115,7 +117,8 @@ jobs:
             echo "$DOCKERHUB_TOKEN" | sudo docker login -u $DOCKERHUB_USERNAME --password-stdin
             
             # Déployer avec Docker Compose
-            sudo docker-compose -f /home/\$USER/docker-compose.prod.yaml --env-file /home/\$USER/.env pull
+            sudo docker image rm -f nikandrynirina/anki-tube:latest || true
+            sudo docker-compose -f /home/\$USER/docker-compose.prod.yaml --env-file /home/\$USER/.env pull nikandrynirina/anki-tube:$IMAGE_TAG
             sudo docker-compose -f /home/\$USER/docker-compose.prod.yaml --env-file /home/\$USER/.env up -d
           EOSSH2
           

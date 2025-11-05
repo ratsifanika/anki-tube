@@ -17,7 +17,7 @@ services:
         limits:
           memory: 128M
   migration:
-    image: nikandrynirina/anki-tube:latest
+    image: nikandrynirina/anki-tube:${IMAGE_TAG}
     environment:
       - ENV=prod
       - MYSQL_USER=${MYSQL_USER}
@@ -35,7 +35,7 @@ services:
     restart: "no"
 
   app:
-    image: nikandrynirina/anki-tube:latest
+    image: nikandrynirina/anki-tube:${IMAGE_TAG}
     expose:
       - 8000
     environment:
