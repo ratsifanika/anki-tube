@@ -73,6 +73,7 @@ jobs:
           MYSQL_HOST=database
           MYSQL_PORT=3306
           LLM_API_KEY=$LLM_API_KEY
+          IMAGE_TAG=$IMAGE_TAG
           EOF
           
           # Copier les fichiers sur l'instance GCE
