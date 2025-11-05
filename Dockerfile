@@ -20,11 +20,12 @@ RUN apt-get update && \
 RUN pip install uv
 
 WORKDIR /app
-COPY ./backend/requirements.txt ./
-RUN uv pip install --system --no-cache-dir -r requirements.txt
 COPY ./backend ./
 # Copie frontend build
 COPY --from=frontend-build /app/frontend/dist ./static
+RUN uv pip install --system --no-cache-dir -r requirements.txt
+
+
 # Crée dossier pour SQLite
 # RUN mkdir -p /app/data
 CMD ["sh", "-c", "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000"]
