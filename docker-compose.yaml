@@ -31,6 +31,11 @@ services:
       MYSQL_DATABASE: ankitube
     volumes:
       - mysql_data:/var/lib/mysql
+  
+  worker:
+    build: ./worker
+    ports:
+      - 8080:8000
 
   pma:
     image: phpmyadmin:5.2

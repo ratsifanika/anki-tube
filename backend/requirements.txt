@@ -1,12 +1,13 @@
 fastapi
 uvicorn
 pydantic
-openai
+httpx
+#openai
 python-dotenv
-yt-dlp
+#yt-dlp
 # git+https://github.com/openai/whisper.git
-faster-whisper
-youtube-transcript-api
+#faster-whisper
+#youtube-transcript-api
 dotenv
 sqlmodel
 mysql-connector-python
@@ -14,4 +15,4 @@ alembic
 fastapi-users[sqlalchemy]
 sqlalchemy[asyncio]
 aiomysql
-pytube
+#pytube
