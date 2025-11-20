@@ -6,7 +6,6 @@ python-dotenv
 yt-dlp
 # git+https://github.com/openai/whisper.git
 faster-whisper
-youtube-transcript-api
 dotenv
 sqlmodel
 mysql-connector-python

@@ -118,9 +118,18 @@ jobs:
             echo "$DOCKERHUB_TOKEN" | sudo docker login -u $DOCKERHUB_USERNAME --password-stdin
             
             # Déployer avec Docker Compose
-            sudo docker image rm -f nikandrynirina/anki-tube:latest || true
             sudo docker-compose -f /home/\$USER/docker-compose.prod.yaml --env-file /home/\$USER/.env pull nikandrynirina/anki-tube:$IMAGE_TAG
             sudo docker-compose -f /home/\$USER/docker-compose.prod.yaml --env-file /home/\$USER/.env up -d
+            #Supprimer la dernière image
+            if [ -f /home/$USER/.anki-tube-last-sha ]; then
+              OLD_SHA=$(cat /home/$USER/.anki-tube-last-sha)
+              echo "Suppression de l'ancienne image $OLD_SHA ..."
+              OLD_IMAGE_ID=$(sudo docker images -q $DOCKERHUB_USERNAME/anki-tube:$OLD_SHA)
+              if [ ! -z "$OLD_IMAGE_ID" ]; then
+                sudo docker rmi -f $OLD_IMAGE_ID
+              fi
+            fi
+            echo "$IMAGE_TAG" > /home/$USER/.anki-tube-last-sha
           EOSSH2
           
           # Nettoyer
