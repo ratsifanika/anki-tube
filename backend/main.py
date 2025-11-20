@@ -130,8 +130,11 @@ async def generate_cards(request: CardGenerationRequest,
 
         # video_title = youtube_service.get_youtube_title(request.video_url)
         print(f"video_id:{video_id}, video_title:{video_title}")
+        
+        #####Deactivate youtube_transcript_api because some video doesn't have a transcript####
+        #transcript = transcription_service.get_transcript(video_id, languages=[request.language])
+        #####Deactivate youtube_transcript_api because some video doesn't have a transcript####
 
-        transcript = transcription_service.get_transcript(video_id, languages=[request.language])
         #4. Générer les cartes avec OpenAI
         cards = card_generation_service.generate_cards(
             transcript=transcript,
